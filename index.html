@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時飲食成本計算機</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10B981', // Emerald 500
+                        secondary: '#3B82F6', // Blue 500
+                        dark: '#0F172A', // Slate 900
+                        surface: '#1E293B', // Slate 800
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Vue.js 3 -->
+    <script type="importmap">
+        {
+          "imports": {
+            "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
+            "firebase/app": "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"
+          }
+        }
+    </script>
+    
+    <style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+        
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        .list-move, /* apply transition to moving elements */
+        .list-enter-active,
+        .list-leave-active {
+            transition: all 0.5s ease;
+        }
+        .list-enter-from,
+        .list-leave-to {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        .list-leave-active {
+            position: absolute;
+            width: 100%;
+        }
+        /* Modal Transition */
+        .modal-enter-active, .modal-leave-active {
+            transition: opacity 0.2s ease;
+        }
+        .modal-enter-from, .modal-leave-to {
+            opacity: 0;
+        }
+        .modal-scale-enter-active, .modal-scale-leave-active {
+            transition: all 0.2s ease;
+        }
+        .modal-scale-enter-from, .modal-scale-leave-to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="bg-dark text-slate-200 min-h-screen font-sans">
+
+<div id="app" class="flex flex-col min-h-screen">
+    
+    <!-- Header -->
+    <header class="bg-surface border-b border-slate-700 shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <h1 class="text-xl font-bold tracking-wide text-white">DietaryCost<span class="text-primary">.Live</span></h1>
+            </div>
+            
+            <div class="flex space-x-2 bg-dark p-1 rounded-lg">
+                <button 
+                    @click="currentTab = 'calculator'"
+                    type="button"
+                    :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200', currentTab === 'calculator' ? 'bg-primary text-white shadow' : 'text-slate-400 hover:text-white']"
+                >
+                    計算機
+                </button>
+                <button 
+                    @click="currentTab = 'products'"
+                    type="button"
+                    :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200', currentTab === 'products' ? 'bg-secondary text-white shadow' : 'text-slate-400 hover:text-white']"
+                >
+                    商品後台
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full relative z-0">
+        
+        <!-- Firebase Config Warning -->
+        <div v-if="!isConfigured" class="bg-red-500/10 border border-red-500 text-red-400 p-4 rounded-lg mb-6 text-center animate-pulse">
+            ⚠️ 請在程式碼中填入您的 Firebase Config 以啟用資料庫連線功能。
+        </div>
+
+        <transition name="fade" mode="out-in">
+            
+            <!-- Tab A: Calculator -->
+            <div v-if="currentTab === 'calculator'" key="calc" class="space-y-6 pb-24">
+                
+                <!-- Quick Templates Section -->
+                <div class="bg-surface p-4 rounded-xl border border-slate-700 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">快速套用模版 (Day Templates)</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button 
+                            @click="applyTemplate('fiber')"
+                            type="button"
+                            class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white transition-all duration-200 font-medium"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            纖體日 (Fiber)
+                        </button>
+                        <button 
+                            @click="applyTemplate('protein')"
+                            type="button"
+                            class="flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500 hover:text-white transition-all duration-200 font-medium"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            蛋白日 (Protein)
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-500 mt-2 text-center">*套用模版將會覆蓋當前行程。若商品顯示紅色，代表資料庫無此商品，價格為 0。</p>
+                </div>
+
+                <!-- Action Bar & Totals -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Total Cost Card -->
+                    <div class="bg-surface p-6 rounded-xl border border-slate-700 shadow-sm relative overflow-hidden group flex items-center justify-between">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">每日總成本</p>
+                            <p class="text-3xl font-bold text-white mt-1">{{ formatCurrency(dailyTotal) }}</p>
+                        </div>
+                        <div class="p-3 bg-slate-700/50 rounded-full">
+                            <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+                        </div>
+                    </div>
+
+                    <!-- Add Time Block Button -->
+                    <button 
+                        @click="addTimeBlock"
+                        type="button"
+                        class="bg-dark border-2 border-dashed border-slate-600 hover:border-primary hover:text-primary text-slate-400 rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-all group"
+                    >
+                        <svg class="w-8 h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span class="font-medium">新增用餐時間</span>
+                    </button>
+                </div>
+
+                <!-- Timeline / Blocks -->
+                <div class="relative">
+                    <transition-group name="list" tag="div" class="space-y-6">
+                        <time-block-section 
+                            v-for="block in sortedDailyLog" 
+                            :key="block.id"
+                            :block="block"
+                            :products="products"
+                            @delete-block="removeTimeBlock(block.id)"
+                            @add-item="addItemToBlock(block)"
+                            @remove-item="(idx) => removeItemFromBlock(block, idx)"
+                        ></time-block-section>
+                    </transition-group>
+
+                    <!-- Empty State -->
+                    <div v-if="dailyLog.length === 0" class="text-center py-12 text-slate-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p>尚未新增任何用餐時段</p>
+                        <p class="text-sm">點擊上方按鈕開始規劃，或選擇快速模版</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab B: Product Manager -->
+            <div v-else key="prod" class="space-y-6">
+                
+                <!-- Add New Product Card -->
+                <div class="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+                    <div class="bg-slate-700/50 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            新增商品
+                        </h3>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">商品名稱</label>
+                            <input v-model="newProduct.name" type="text" placeholder="例如：好市多雞胸肉" class="w-full bg-dark border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">整包價格 ($)</label>
+                            <input v-model.number="newProduct.packPrice" type="number" min="0" class="w-full bg-dark border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1">整包數量</label>
+                                <input v-model.number="newProduct.packSize" type="number" min="1" class="w-full bg-dark border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1">單位</label>
+                                <input v-model="newProduct.unit" type="text" placeholder="g/ml/顆" class="w-full bg-dark border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-colors">
+                            </div>
+                        </div>
+                        <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-secondary hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex justify-center items-center gap-2">
+                            <span v-if="loading">...</span>
+                            <span v-else>新增</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Products Table -->
+                <div class="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-700/50 text-slate-300 uppercase font-medium">
+                                <tr>
+                                    <th class="px-6 py-4">商品名稱</th>
+                                    <th class="px-6 py-4 text-right">整包價格</th>
+                                    <th class="px-6 py-4 text-right">規格 (數量/單位)</th>
+                                    <th class="px-6 py-4 text-right">單價成本</th>
+                                    <th class="px-6 py-4 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700">
+                                <tr v-for="product in products" :key="product.id" class="hover:bg-slate-700/30 transition-colors group">
+                                    <td class="px-6 py-3">
+                                        <input v-model="product.name" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-secondary hover:border-slate-600 focus:outline-none w-full py-1 text-white">
+                                    </td>
+                                    <td class="px-6 py-3 text-right">
+                                        <input v-model.number="product.packPrice" @change="updateProduct(product)" type="number" class="bg-transparent border-b border-transparent focus:border-secondary hover:border-slate-600 focus:outline-none w-24 text-right py-1 text-white">
+                                    </td>
+                                    <td class="px-6 py-3 text-right">
+                                        <div class="flex items-center justify-end gap-1">
+                                            <input v-model.number="product.packSize" @change="updateProduct(product)" type="number" class="bg-transparent border-b border-transparent focus:border-secondary hover:border-slate-600 focus:outline-none w-16 text-right py-1 text-white">
+                                            <input v-model="product.unit" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-secondary hover:border-slate-600 focus:outline-none w-12 text-center py-1 text-slate-400">
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3 text-right font-medium text-primary">
+                                        {{ calculateUnitCost(product) }}
+                                    </td>
+                                    <td class="px-6 py-3 text-center">
+                                        <button @click="deleteProduct(product.id)" type="button" class="text-slate-500 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-red-500/10">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="products.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                        目前沒有商品資料，請從上方新增。
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </transition>
+
+    </main>
+
+    <!-- Global Modal (Alert/Confirm) -->
+    <transition name="modal">
+        <div v-if="modalState.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <!-- Backdrop -->
+            <div @click="closeModal(false)" class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"></div>
+            
+            <!-- Modal Card -->
+            <transition name="modal-scale">
+                <div v-if="modalState.isOpen" class="bg-surface rounded-xl border border-slate-600 shadow-2xl max-w-sm w-full relative z-10 overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                            <span v-if="modalState.type === 'alert'">🔔 提示</span>
+                            <span v-else>⚠️ 確認</span>
+                        </h3>
+                        <p class="text-slate-300 leading-relaxed">{{ modalState.message }}</p>
+                    </div>
+                    <div class="bg-slate-700/30 px-6 py-4 flex justify-end gap-3">
+                        <button 
+                            v-if="modalState.type === 'confirm'"
+                            @click="closeModal(false)" 
+                            type="button" 
+                            class="px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-600 transition-colors"
+                        >
+                            取消
+                        </button>
+                        <button 
+                            @click="closeModal(true)" 
+                            type="button" 
+                            class="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-white shadow hover:bg-blue-600 transition-colors"
+                        >
+                            確定
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </transition>
+
+</div>
+
+<!-- Template for Time Block Section Component -->
+<template id="time-block-section-template">
+    <div class="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden transition-all hover:border-slate-600">
+        <div class="bg-slate-700/30 px-6 py-3 border-b border-slate-700 flex justify-between items-center gap-4">
+            
+            <!-- Time Input -->
+            <div class="flex items-center gap-3">
+                <div class="bg-slate-800 p-2 rounded-lg border border-slate-600">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <input 
+                    type="time" 
+                    v-model="block.time" 
+                    class="bg-transparent text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 rounded px-1 cursor-pointer"
+                >
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span class="text-sm font-medium text-slate-400 hidden sm:block">小計: <span class="text-primary text-lg">{{ formatCurrency(subtotal) }}</span></span>
+                
+                <!-- Delete Block Button (Fixed: Added type="button") -->
+                <button 
+                    type="button"
+                    @click="$emit('delete-block')" 
+                    class="text-slate-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg" 
+                    title="刪除此時段"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <div class="space-y-3">
+                <div v-for="(item, idx) in block.items" :key="idx" class="grid grid-cols-12 gap-3 items-center bg-dark/50 p-3 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-colors">
+                    <!-- Product Search/Select -->
+                    <div class="col-span-5 sm:col-span-5 relative">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">選擇商品</label>
+                        <input 
+                            list="product-options" 
+                            :value="item.productId ? getProductName(item.productId) : (item.unknownName || '')"
+                            @input="handleProductSelect($event, item)"
+                            @change="handleProductSelect($event, item)"
+                            :placeholder="item.unknownName ? '未找到商品: ' + item.unknownName : '搜尋商品...'"
+                            :class="[
+                                'w-full bg-slate-800 text-sm border rounded-md px-2 py-1.5 focus:ring-1 outline-none transition-colors',
+                                !item.productId && item.unknownName 
+                                    ? 'border-red-500 text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500' 
+                                    : 'border-slate-600 text-white focus:border-primary focus:ring-primary'
+                            ]"
+                            :title="!item.productId && item.unknownName ? '資料庫找不到此商品，請至商品後台新增' : ''"
+                        >
+                    </div>
+
+                    <!-- Quantity Input -->
+                    <div class="col-span-3 sm:col-span-2">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">數量</label>
+                        <div class="flex items-center">
+                            <input 
+                                v-model.number="item.quantity" 
+                                type="number" 
+                                min="0" 
+                                step="0.1"
+                                class="w-full bg-slate-800 text-sm border border-slate-600 rounded-md px-2 py-1.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none text-center"
+                            >
+                            <span class="text-xs text-slate-500 ml-1 hidden sm:inline">{{ getProductUnit(item.productId) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Unit Cost Display -->
+                    <div class="col-span-2 sm:col-span-2 text-right hidden sm:block">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">單價</label>
+                        <span class="text-xs text-slate-400">{{ formatUnitCost(item.productId) }}</span>
+                    </div>
+
+                    <!-- Line Total -->
+                    <div class="col-span-3 sm:col-span-2 text-right">
+                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">金額</label>
+                        <span class="text-sm font-bold text-slate-200">{{ formatCurrency(calculateLineTotal(item)) }}</span>
+                    </div>
+
+                    <!-- Delete Item -->
+                    <div class="col-span-1 text-center">
+                        <button type="button" @click="$emit('remove-item', idx)" class="text-slate-600 hover:text-red-400 mt-4 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="button" @click="$emit('add-item')" class="w-full py-2 border border-dashed border-slate-600 rounded-lg text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium flex justify-center items-center gap-2 group">
+                    <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    新增食材
+                </button>
+            </div>
+            <!-- Mobile Subtotal -->
+            <div class="sm:hidden mt-3 pt-3 border-t border-slate-700/50 flex justify-end">
+                <span class="text-sm font-medium text-slate-400">小計: <span class="text-primary text-base">{{ formatCurrency(subtotal) }}</span></span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Datalist for Search (Shared) -->
+<datalist id="product-options">
+    <!-- Populated by JS -->
+</datalist>
+
+<script type="module">
+    import { createApp, ref, reactive, computed, onMounted, watch } from 'vue';
+    import { initializeApp } from 'firebase/app';
+    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const firebaseConfig = {
+    apiKey: "AIzaSyDYIbCdV49gV05_PDEHfBGpg8REOoZchgc",
+    authDomain: "cost-calculator-74860.firebaseapp.com",
+    projectId: "cost-calculator-74860",
+    storageBucket: "cost-calculator-74860.firebasestorage.app",
+    messagingSenderId: "1079472315078",
+    appId: "1:1079472315078:web:e230b337dc3ec648bc15c7"
+  };
+
+    // Initialize Firebase
+    let db = null;
+    const isConfigured = ref(false);
+
+    if (firebaseConfig.apiKey) {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        isConfigured.value = true;
+    } else {
+        console.warn("Firebase config missing.");
+    }
+
+    // ==========================================
+    // COMPONENT: Time Block Section
+    // ==========================================
+    const TimeBlockSection = {
+        template: '#time-block-section-template',
+        props: ['block', 'products'],
+        emits: ['add-item', 'remove-item', 'delete-block'],
+        setup(props) {
+            
+            const getProduct = (id) => props.products.find(p => p.id === id);
+
+            const getProductName = (id) => {
+                const p = getProduct(id);
+                return p ? p.name : '';
+            };
+
+            const getProductUnit = (id) => {
+                const p = getProduct(id);
+                return p ? p.unit : '';
+            };
+
+            const formatCurrency = (val) => {
+                return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(val);
+            };
+
+            const formatUnitCost = (id) => {
+                const p = getProduct(id);
+                if (!p || !p.packSize) return '-';
+                const cost = p.packPrice / p.packSize;
+                return `$${cost.toFixed(2)}/${p.unit}`;
+            };
+
+            const calculateLineTotal = (item) => {
+                const p = getProduct(item.productId);
+                if (!p || !p.packSize) return 0;
+                const cost = p.packPrice / p.packSize;
+                return cost * (item.quantity || 0);
+            };
+
+            const subtotal = computed(() => {
+                return props.block.items.reduce((sum, item) => sum + calculateLineTotal(item), 0);
+            });
+
+            // Handle the Input Change for Datalist
+            const handleProductSelect = (event, item) => {
+                const val = event.target.value;
+                const product = props.products.find(p => p.name === val);
+                if (product) {
+                    item.productId = product.id;
+                    item.unknownName = null; // Clear error state if matched
+                } else {
+                    item.productId = ''; // Clear ID if manually typed something new (or garbage)
+                    // Optional: You could store val in unknownName if you want to support free-text entry without IDs
+                }
+            };
+
+            return {
+                getProductName,
+                getProductUnit,
+                formatCurrency,
+                formatUnitCost,
+                calculateLineTotal,
+                subtotal,
+                handleProductSelect
+            };
+        }
+    };
+
+    // ==========================================
+    // MAIN APP
+    // ==========================================
+    const app = createApp({
+        components: {
+            'time-block-section': TimeBlockSection
+        },
+        setup() {
+            const currentTab = ref('calculator'); 
+            const products = ref([]);
+            const loading = ref(false);
+
+            // Modal Logic (Replaces native confirm/alert)
+            const modalState = reactive({
+                isOpen: false,
+                type: 'alert', // 'alert' or 'confirm'
+                message: '',
+                resolve: null
+            });
+
+            const showConfirm = (message) => {
+                return new Promise((resolve) => {
+                    modalState.type = 'confirm';
+                    modalState.message = message;
+                    modalState.isOpen = true;
+                    modalState.resolve = resolve;
+                });
+            };
+
+            const showAlert = (message) => {
+                return new Promise((resolve) => {
+                    modalState.type = 'alert';
+                    modalState.message = message;
+                    modalState.isOpen = true;
+                    modalState.resolve = resolve;
+                });
+            };
+
+            const closeModal = (result) => {
+                modalState.isOpen = false;
+                if (modalState.resolve) {
+                    modalState.resolve(result);
+                    modalState.resolve = null;
+                }
+            };
+
+            // Calculator State
+            const savedLog = JSON.parse(localStorage.getItem('diet_calculator_log'));
+            const dailyLog = ref(savedLog || []);
+
+            // Watch log to save to local storage
+            watch(dailyLog, (newVal) => {
+                localStorage.setItem('diet_calculator_log', JSON.stringify(newVal));
+            }, { deep: true });
+
+            // Sort Daily Log automatically by time
+            const sortedDailyLog = computed(() => {
+                return [...dailyLog.value].sort((a, b) => {
+                    return a.time.localeCompare(b.time);
+                });
+            });
+
+            // Product Manager Form
+            const newProduct = reactive({
+                name: '',
+                packPrice: null,
+                packSize: null,
+                unit: ''
+            });
+
+            const isFormValid = computed(() => {
+                return newProduct.name && newProduct.packPrice >= 0 && newProduct.packSize > 0 && newProduct.unit;
+            });
+
+            // ---------------------------------------
+            // TEMPLATE LOGIC
+            // ---------------------------------------
+            const TEMPLATES = {
+                fiber: [
+                    { time: '07:45', items: [{name: '纖維', qty: 2}, {name: '卵磷脂', qty: 1}] },
+                    { time: '08:00', items: [{name: '水煮蛋', qty: 1}, {name: '蛋白素', qty: 2}, {name: '卵磷脂', qty: 1}, {name: 'DX', qty: 1}, {name: '魚油', qty: 1}, {name: '綠茶素', qty: 1}, {name: 'B群', qty: 2}] },
+                    { time: '10:00', items: [{name: '蛋白素', qty: 2}, {name: '卵磷脂', qty: 1}, {name: 'B群', qty: 2}, {name: 'C', qty: 1}, {name: '鈣', qty: 2}] },
+                    { time: '12:00', items: [{name: '醬牛/雞/蝦', qty: 1}, {name: '蛋白素', qty: 2}, {name: '卵磷脂', qty: 1}, {name: 'DX', qty: 1}, {name: '魚油', qty: 1}, {name: '綠茶素', qty: 1}, {name: 'B群', qty: 2}] },
+                    { time: '16:00', items: [{name: '蛋白素', qty: 2}, {name: '纖維', qty: 1}] },
+                    { time: '18:30', items: [{name: '蔬菜', qty: 2}, {name: '雞胸肉', qty: 1}, {name: '魚油', qty: 1}] }
+                ],
+                protein: [
+                    { time: '08:00', items: [{name: '蛋白素', qty: 3}, {name: '蘋果', qty: 1}] },
+                    { time: '10:00', items: [{name: '水煮蛋', qty: 2}] },
+                    { time: '12:00', items: [{name: '雞胸肉', qty: 1}, {name: '蔬菜', qty: 3}, {name: '糙米飯', qty: 1}] },
+                    { time: '15:00', items: [{name: '蛋白素', qty: 2}, {name: '堅果', qty: 1}] },
+                    { time: '18:00', items: [{name: '牛排', qty: 1}, {name: '沙拉', qty: 1}] }
+                ]
+            };
+
+            const applyTemplate = async (type) => {
+                if (dailyLog.value.length > 0) {
+                    const confirmed = await showConfirm('套用模版將會清空目前的所有行程，確定要繼續嗎？');
+                    if (!confirmed) return;
+                }
+
+                const selectedTemplate = TEMPLATES[type];
+                if (!selectedTemplate) return;
+
+                const newLog = [];
+
+                selectedTemplate.forEach(block => {
+                    const newItems = block.items.map(tItem => {
+                        // Try to find matching product in database
+                        const product = products.value.find(p => p.name === tItem.name);
+                        
+                        if (product) {
+                            return { productId: product.id, quantity: tItem.qty };
+                        } else {
+                            // If not found, keep the name to show as error/placeholder
+                            return { productId: '', quantity: tItem.qty, unknownName: tItem.name };
+                        }
+                    });
+
+                    newLog.push({
+                        id: Date.now() + Math.random(),
+                        time: block.time,
+                        items: newItems
+                    });
+                });
+
+                dailyLog.value = newLog;
+            };
+
+            // ---------------------------------------
+            // Firestore Logic
+            // ---------------------------------------
+            onMounted(() => {
+                if (!db) return;
+
+                // Sync Products Real-time
+                const q = collection(db, "products");
+                onSnapshot(q, (snapshot) => {
+                    products.value = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })).sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    updateDatalistDOM();
+                });
+            });
+
+            const updateDatalistDOM = () => {
+                const datalist = document.getElementById('product-options');
+                if(datalist) {
+                    datalist.innerHTML = '';
+                    products.value.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.name;
+                        option.textContent = `$${p.packPrice} / ${p.packSize}${p.unit}`;
+                        datalist.appendChild(option);
+                    });
+                }
+            };
+            
+            watch(products, updateDatalistDOM, { flush: 'post' });
+
+            // CRUD Operations
+            const addProduct = async () => {
+                if (!db || !isFormValid.value) return;
+                loading.value = true;
+                try {
+                    await addDoc(collection(db, "products"), {
+                        name: newProduct.name,
+                        packPrice: Number(newProduct.packPrice),
+                        packSize: Number(newProduct.packSize),
+                        unit: newProduct.unit,
+                        createdAt: serverTimestamp()
+                    });
+                    newProduct.name = '';
+                    newProduct.packPrice = null;
+                    newProduct.packSize = null;
+                    newProduct.unit = '';
+                } catch (e) {
+                    showAlert("Error adding product: " + e.message);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            const updateProduct = async (product) => {
+                if (!db) return;
+                try {
+                    const docRef = doc(db, "products", product.id);
+                    await updateDoc(docRef, {
+                        name: product.name,
+                        packPrice: Number(product.packPrice),
+                        packSize: Number(product.packSize),
+                        unit: product.unit
+                    });
+                } catch (e) {
+                    console.error("Update failed", e);
+                }
+            };
+
+            const deleteProduct = async (id) => {
+                if (!db) return;
+                const confirmed = await showConfirm('確定要刪除此商品嗎？');
+                if (!confirmed) return;
+                
+                try {
+                    await deleteDoc(doc(db, "products", id));
+                } catch (e) {
+                    showAlert("Delete failed: " + e.message);
+                }
+            };
+
+            // ---------------------------------------
+            // Calculator Logic
+            // ---------------------------------------
+            
+            const addTimeBlock = () => {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                dailyLog.value.push({
+                    id: Date.now() + Math.random(), 
+                    time: `${hours}:${minutes}`,
+                    items: []
+                });
+            };
+
+            const removeTimeBlock = async (blockId) => {
+                const confirmed = await showConfirm('確定要刪除整個時段嗎？');
+                if(confirmed) {
+                    const idx = dailyLog.value.findIndex(b => b.id === blockId);
+                    if(idx !== -1) {
+                        dailyLog.value.splice(idx, 1);
+                    }
+                }
+            };
+
+            const addItemToBlock = (block) => {
+                block.items.push({
+                    productId: '',
+                    quantity: 1
+                });
+            };
+
+            const removeItemFromBlock = (block, idx) => {
+                block.items.splice(idx, 1);
+            };
+
+            // Calculate daily total across all blocks
+            const dailyTotal = computed(() => {
+                let total = 0;
+                dailyLog.value.forEach(block => {
+                    block.items.forEach(item => {
+                        const p = products.value.find(p => p.id === item.productId);
+                        if (p && p.packSize) {
+                            total += (p.packPrice / p.packSize) * item.quantity;
+                        }
+                    });
+                });
+                return total;
+            });
+
+            const calculateUnitCost = (product) => {
+                if (!product.packSize) return 0;
+                const cost = product.packPrice / product.packSize;
+                return cost < 10 
+                    ? `$${cost.toFixed(2)}/${product.unit}` 
+                    : `$${Math.round(cost)}/${product.unit}`;
+            };
+
+            const formatCurrency = (val) => {
+                return new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 }).format(val);
+            };
+
+            return {
+                isConfigured,
+                currentTab,
+                products,
+                dailyLog,
+                sortedDailyLog,
+                newProduct,
+                loading,
+                isFormValid,
+                dailyTotal,
+                modalState,
+                addProduct,
+                updateProduct,
+                deleteProduct,
+                addTimeBlock,
+                removeTimeBlock,
+                addItemToBlock,
+                removeItemFromBlock,
+                calculateUnitCost,
+                formatCurrency,
+                applyTemplate,
+                closeModal
+            };
+        }
+    });
+
+    app.mount('#app');
+</script>
+
+</body>
+</html>

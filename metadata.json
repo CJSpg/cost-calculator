@@ -1,0 +1,5 @@
+{
+  "name": "Dietary Cost Calculator",
+  "description": "A real-time, multi-user dietary cost calculator using Vue.js and Firebase Firestore. Features product management and dynamic meal costing.",
+  "requestFramePermissions": []
+}
