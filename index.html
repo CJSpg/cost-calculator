@@ -13,7 +13,7 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#8B5CF6', // Violet 500 (New Theme)
+                        primary: '#8B5CF6', // Violet 500
                         secondary: '#EC4899', // Pink 500
                         dark: '#0F172A', // Slate 900
                         surface: '#1E293B', // Slate 800
@@ -39,46 +39,25 @@
     
     <style>
         /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1e293b; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #475569; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b; 
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        /* Transitions */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
         .list-move, .list-enter-active, .list-leave-active { transition: all 0.5s ease; }
         .list-enter-from, .list-leave-to { opacity: 0; transform: translateX(30px); }
         .list-leave-active { position: absolute; width: 100%; }
         
-        /* Modal */
         .modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
         .modal-enter-from, .modal-leave-to { opacity: 0; }
-        .modal-scale-enter-active, .modal-scale-leave-active { transition: all 0.2s ease; }
-        .modal-scale-enter-from, .modal-scale-leave-to { opacity: 0; transform: scale(0.95); }
 
-        /* Print Styles */
         @media print {
             body { background: white; color: black; }
             .no-print, header, .edit-controls { display: none !important; }
             .print-only { display: block !important; }
-            .card { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
             #capture-area { padding: 0; background: white; }
             .text-white { color: black !important; }
             .text-slate-300, .text-slate-400, .text-slate-500 { color: #555 !important; }
@@ -97,181 +76,108 @@
                 <h1 class="text-xl font-bold tracking-wide text-white">Weekly<span class="text-primary">Plan</span></h1>
             </div>
             
-            <div class="flex space-x-2 bg-dark p-1 rounded-lg">
-                <button 
-                    @click="currentTab = 'planner'"
-                    type="button"
-                    :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200', currentTab === 'planner' ? 'bg-primary text-white shadow' : 'text-slate-400 hover:text-white']"
-                >
-                    規劃表
-                </button>
-                <button 
-                    @click="currentTab = 'products'"
-                    type="button"
-                    :class="['px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200', currentTab === 'products' ? 'bg-slate-600 text-white shadow' : 'text-slate-400 hover:text-white']"
-                >
-                    商品設定
-                </button>
-            </div>
+            <a href="admin.html" class="text-xs text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                後台
+            </a>
         </div>
     </header>
 
     <!-- Content -->
     <main class="flex-grow p-4 sm:p-6 max-w-7xl mx-auto w-full relative z-0">
 
-        <transition name="fade" mode="out-in">
+        <!-- Day Navigation -->
+        <div class="flex overflow-x-auto pb-2 gap-2 no-print custom-scrollbar">
+            <button 
+                v-for="day in weekDays" 
+                :key="day"
+                @click="currentDay = day"
+                type="button"
+                :class="[
+                    'flex-shrink-0 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 border border-transparent',
+                    currentDay === day 
+                        ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' 
+                        : 'bg-surface text-slate-400 hover:bg-slate-700 hover:border-slate-600'
+                ]"
+            >
+                {{ day }}
+            </button>
+        </div>
+
+        <!-- Controls & Current Day Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-4 rounded-xl border border-slate-700 mt-6">
+            <div>
+                <h2 class="text-2xl font-bold text-white">{{ currentDay }} <span class="text-slate-500 text-base font-normal">行程規劃</span></h2>
+                <p class="text-xs text-slate-400 mt-1">安排今日的飲食時段與數量</p>
+            </div>
+            <div class="flex gap-2">
+                <button 
+                    @click="openCopyModal"
+                    type="button"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors text-sm font-medium"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                    複製行程到別天
+                </button>
+            </div>
+        </div>
+
+        <!-- Timeline / Blocks for Current Day -->
+        <div class="relative min-h-[300px] mt-6">
+            <transition-group name="list" tag="div" class="space-y-6">
+                <time-block-section 
+                    v-for="block in sortedCurrentDayLog" 
+                    :key="block.id"
+                    :block="block"
+                    :products="products"
+                    @delete-block="removeTimeBlock(block.id)"
+                    @add-item="addItemToBlock(block)"
+                    @remove-item="(idx) => removeItemFromBlock(block, idx)"
+                ></time-block-section>
+            </transition-group>
+
+            <!-- Add Time Block Button -->
+            <button 
+                @click="addTimeBlock"
+                type="button"
+                class="w-full mt-6 bg-dark border-2 border-dashed border-slate-600 hover:border-primary hover:text-primary text-slate-400 rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-all group"
+            >
+                <svg class="w-8 h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span class="font-medium">新增時段</span>
+            </button>
+        </div>
+
+        <!-- Weekly Summary Section (Print Area) -->
+        <div id="capture-area" class="mt-12 bg-white text-slate-900 rounded-xl overflow-hidden shadow-xl mb-12">
+            <div class="bg-primary px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    本週採購總清單
+                </h3>
+                <div class="text-xs text-white/80 no-print">自動統計所有天數</div>
+            </div>
             
-            <!-- Tab A: Weekly Planner -->
-            <div v-if="currentTab === 'planner'" key="planner" class="space-y-6 pb-24">
-                
-                <!-- Day Navigation -->
-                <div class="flex overflow-x-auto pb-2 gap-2 no-print custom-scrollbar">
-                    <button 
-                        v-for="day in weekDays" 
-                        :key="day"
-                        @click="currentDay = day"
-                        type="button"
-                        :class="[
-                            'flex-shrink-0 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 border border-transparent',
-                            currentDay === day 
-                                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' 
-                                : 'bg-surface text-slate-400 hover:bg-slate-700 hover:border-slate-600'
-                        ]"
-                    >
-                        {{ day }}
-                    </button>
+            <div class="p-6">
+                <div v-if="Object.keys(weeklySummary).length === 0" class="text-center text-slate-400 py-8">
+                    尚未安排任何行程，請先至上方填寫每日規劃。
                 </div>
-
-                <!-- Controls & Current Day Header -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-4 rounded-xl border border-slate-700">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">{{ currentDay }} <span class="text-slate-500 text-base font-normal">行程規劃</span></h2>
-                        <p class="text-xs text-slate-400 mt-1">安排今日的飲食時段與數量</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button 
-                            @click="openCopyModal"
-                            type="button"
-                            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors text-sm font-medium"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                            複製行程到別天
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Timeline / Blocks for Current Day -->
-                <div class="relative min-h-[300px]">
-                    <transition-group name="list" tag="div" class="space-y-6">
-                        <time-block-section 
-                            v-for="block in sortedCurrentDayLog" 
-                            :key="block.id"
-                            :block="block"
-                            :products="products"
-                            @delete-block="removeTimeBlock(block.id)"
-                            @add-item="addItemToBlock(block)"
-                            @remove-item="(idx) => removeItemFromBlock(block, idx)"
-                        ></time-block-section>
-                    </transition-group>
-
-                    <!-- Add Time Block Button -->
-                    <button 
-                        @click="addTimeBlock"
-                        type="button"
-                        class="w-full mt-6 bg-dark border-2 border-dashed border-slate-600 hover:border-primary hover:text-primary text-slate-400 rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-all group"
-                    >
-                        <svg class="w-8 h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        <span class="font-medium">新增時段</span>
-                    </button>
-                </div>
-
-                <!-- Weekly Summary Section (Print Area) -->
-                <div id="capture-area" class="mt-12 bg-white text-slate-900 rounded-xl overflow-hidden shadow-xl">
-                    <div class="bg-primary px-6 py-4 flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                            本週採購總清單
-                        </h3>
-                        <div class="text-xs text-white/80 no-print">自動統計所有天數</div>
-                    </div>
-                    
-                    <div class="p-6">
-                        <div v-if="Object.keys(weeklySummary).length === 0" class="text-center text-slate-400 py-8">
-                            尚未安排任何行程，請先至上方填寫每日規劃。
-                        </div>
-                        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-center border-b border-slate-200 pb-2">
-                                <span class="font-bold text-lg text-slate-800">{{ item.name }}</span>
-                                <span class="font-mono text-xl text-primary font-bold bg-purple-50 px-2 rounded">
-                                    {{ item.totalQuantity }} <span class="text-xs text-slate-500 ml-1">{{ item.unit }}</span>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-100 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 no-print">
-                        <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            下載圖片
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Tab B: Product Manager (Settings) -->
-            <div v-else key="prod" class="space-y-6">
-                
-                <div class="bg-surface rounded-xl border border-slate-700 p-6">
-                    <h2 class="text-xl font-bold text-white mb-4">商品與單位設定</h2>
-                    <p class="text-sm text-slate-400 mb-6">在此設定您常用的食材名稱與單位 (例如: g, ml, 顆, 包)。<br>價格欄位為選填，主要用於記錄。</p>
-
-                    <!-- Add New -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8 bg-dark/30 p-4 rounded-lg border border-slate-700">
-                        <div class="md:col-span-2">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">食材名稱</label>
-                            <input v-model="newProduct.name" type="text" placeholder="例如：雞蛋" class="w-full bg-surface border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">單位</label>
-                            <input v-model="newProduct.unit" type="text" placeholder="顆" class="w-full bg-surface border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                        </div>
-                        <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-primary hover:bg-violet-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                            <span v-if="loading">...</span>
-                            <span v-else>新增</span>
-                        </button>
-                    </div>
-
-                    <!-- Table -->
-                    <div class="overflow-hidden rounded-lg border border-slate-700">
-                        <table class="w-full text-left text-sm">
-                            <thead class="bg-slate-700/50 text-slate-300 uppercase font-medium">
-                                <tr>
-                                    <th class="px-6 py-4">名稱</th>
-                                    <th class="px-6 py-4 text-center">單位</th>
-                                    <th class="px-6 py-4 text-center">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-700">
-                                <tr v-for="product in products" :key="product.id" class="hover:bg-slate-700/30 transition-colors">
-                                    <td class="px-6 py-3">
-                                        <input v-model="product.name" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-600 focus:outline-none w-full py-1 text-white">
-                                    </td>
-                                    <td class="px-6 py-3 text-center">
-                                        <input v-model="product.unit" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-600 focus:outline-none w-16 text-center py-1 text-slate-400">
-                                    </td>
-                                    <td class="px-6 py-3 text-center">
-                                        <button @click="deleteProduct(product.id)" type="button" class="text-slate-500 hover:text-red-400 transition-colors">
-                                            刪除
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-center border-b border-slate-200 pb-2">
+                        <span class="font-bold text-lg text-slate-800">{{ item.name }}</span>
+                        <span class="font-mono text-xl text-primary font-bold bg-purple-50 px-2 rounded">
+                            {{ item.totalQuantity }} <span class="text-xs text-slate-500 ml-1">{{ item.unit }}</span>
+                        </span>
                     </div>
                 </div>
             </div>
-        </transition>
+
+            <div class="bg-slate-100 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 no-print">
+                <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    下載圖片
+                </button>
+            </div>
+        </div>
 
     </main>
 
@@ -407,7 +313,7 @@
 <script type="module">
     import { createApp, ref, reactive, computed, onMounted, watch } from 'vue';
     import { initializeApp } from 'firebase/app';
-    import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+    import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 
     // ==========================================
     // CONFIGURATION
@@ -461,14 +367,11 @@
     const app = createApp({
         components: { 'time-block-section': TimeBlockSection },
         setup() {
-            const currentTab = ref('planner'); 
             const products = ref([]);
-            const loading = ref(false);
             const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
             const currentDay = ref('週一');
 
             // --- DATA STRUCTURE: WEEKLY PLAN ---
-            // Stores array of blocks for each day
             const weeklyPlan = ref({
                 '週一': [], '週二': [], '週三': [], '週四': [], '週五': [], '週六': [], '週日': []
             });
@@ -476,7 +379,6 @@
             // Load from LocalStorage
             const savedPlan = JSON.parse(localStorage.getItem('weekly_meal_plan'));
             if(savedPlan) {
-                // Merge to ensure all keys exist
                 weeklyPlan.value = { ...weeklyPlan.value, ...savedPlan };
             }
 
@@ -601,19 +503,6 @@
             };
             watch(products, updateDatalistDOM, { flush: 'post' });
 
-            const newProduct = reactive({ name: '', unit: '' });
-            const isFormValid = computed(() => newProduct.name && newProduct.unit);
-            
-            const addProduct = async () => {
-                if (!db || !isFormValid.value) return;
-                loading.value = true;
-                await addDoc(collection(db, "products"), { name: newProduct.name, unit: newProduct.unit, createdAt: serverTimestamp() });
-                newProduct.name = ''; newProduct.unit = '';
-                loading.value = false;
-            };
-            const updateProduct = async (p) => { if(db) await updateDoc(doc(db, "products", p.id), { name: p.name, unit: p.unit }); };
-            const deleteProduct = async (id) => { if(db && await showConfirm('刪除此商品？')) await deleteDoc(doc(db, "products", id)); };
-
             // --- EXPORT ---
             const downloadImage = () => {
                 const element = document.getElementById('capture-area');
@@ -626,11 +515,10 @@
             };
 
             return {
-                currentTab, currentDay, weekDays, weeklyPlan, sortedCurrentDayLog, products,
-                modalState, copyModal, weeklySummary, newProduct, loading, isFormValid,
+                currentDay, weekDays, weeklyPlan, sortedCurrentDayLog, products,
+                modalState, copyModal, weeklySummary,
                 addTimeBlock, removeTimeBlock, addItemToBlock, removeItemFromBlock,
                 openCopyModal, closeCopyModal, submitCopy,
-                addProduct, updateProduct, deleteProduct,
                 closeModal, downloadImage
             };
         }
