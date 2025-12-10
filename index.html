@@ -149,6 +149,7 @@
                     @delete-block="removeTimeBlock(block.id)"
                     @add-item="addItemToBlock(block)"
                     @remove-item="(idx) => removeItemFromBlock(block, idx)"
+                    @open-picker="(item) => openPicker(item)"
                 ></time-block-section>
             </transition-group>
 
@@ -167,7 +168,8 @@
         <div class="mt-12 rounded-xl overflow-hidden shadow-xl mb-12 border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface transition-colors duration-300">
             
             <!-- Actual Capture Target (Content) -->
-            <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300">
+            <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300 pb-8">
+                <!-- Summary Header -->
                 <div class="px-6 py-4 flex justify-between items-center transition-colors duration-300 bg-primary dark:bg-slate-700">
                     <h3 class="text-xl font-bold text-white flex items-center gap-2">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -176,6 +178,7 @@
                     <div class="text-xs text-white/80 no-print">自動統計所有天數</div>
                 </div>
                 
+                <!-- Summary Content -->
                 <div class="p-6">
                     <div v-if="Object.keys(weeklySummary).length === 0" class="text-center text-slate-400 py-8">
                         尚未安排任何行程，請先至上方填寫每日規劃。
@@ -186,6 +189,48 @@
                             <span class="font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300">
                                 {{ item.totalQuantity }} <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">{{ item.unit }}</span>
                             </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Itinerary Section -->
+                <div v-if="hasAnyData" class="mt-4 pt-8 px-6 border-t-2 border-dashed border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-center mb-6">
+                        <span class="px-4 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm font-bold tracking-wider">
+                            每週詳細行程
+                        </span>
+                    </div>
+
+                    <div class="space-y-8">
+                        <div v-for="day in weekDays" :key="day">
+                            <div v-if="weeklyPlan[day] && weeklyPlan[day].length > 0">
+                                <h4 class="text-lg font-bold text-primary mb-3 border-l-4 border-primary pl-3 flex items-center">
+                                    {{ day }}
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div 
+                                        v-for="block in getSortedBlocks(day)" 
+                                        :key="block.id"
+                                        class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-200 dark:border-slate-700/50"
+                                    >
+                                        <div class="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            <span class="font-mono font-bold text-slate-700 dark:text-slate-200">{{ block.time }}</span>
+                                        </div>
+                                        <ul class="space-y-1">
+                                            <li v-for="item in block.items" :key="item.productId" class="text-sm flex justify-between">
+                                                <span class="text-slate-600 dark:text-slate-300 truncate pr-2">
+                                                    {{ getProductName(item.productId) || item.unknownName || '未命名' }}
+                                                </span>
+                                                <span class="font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                                    x {{ item.quantity }} {{ getProductUnit(item.productId) }}
+                                                </span>
+                                            </li>
+                                            <li v-if="block.items.length === 0" class="text-xs text-slate-400 italic">無項目</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -201,6 +246,66 @@
         </div>
 
     </main>
+
+    <!-- PRODUCT PICKER MODAL (Full screen on mobile) -->
+    <transition name="modal">
+        <div v-if="pickerState.isOpen" class="fixed inset-0 z-50 flex flex-col bg-slate-100 dark:bg-dark sm:bg-black/60 sm:backdrop-blur-sm sm:flex-row sm:items-center sm:justify-center p-0 sm:p-4">
+            
+            <!-- Modal Box -->
+            <div class="bg-white dark:bg-surface w-full h-full sm:h-auto sm:max-h-[80vh] sm:max-w-lg sm:rounded-xl shadow-2xl flex flex-col relative transition-colors duration-300">
+                
+                <!-- Header / Search -->
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-surface sticky top-0 z-10 sm:rounded-t-xl flex gap-3 items-center">
+                    <div class="relative flex-grow">
+                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input 
+                            ref="pickerSearchInput"
+                            v-model="pickerState.searchQuery" 
+                            type="text" 
+                            placeholder="搜尋商品..." 
+                            class="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none"
+                        >
+                    </div>
+                    <button @click="closePicker" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-2">
+                        <span class="text-sm font-bold">取消</span>
+                    </button>
+                </div>
+
+                <!-- Product List -->
+                <div class="flex-grow overflow-y-auto p-2 sm:p-4 custom-scrollbar">
+                    
+                    <!-- Exact Match / Custom Create Option -->
+                    <div 
+                        v-if="pickerState.searchQuery && !filteredProducts.some(p => p.name === pickerState.searchQuery)"
+                        @click="selectCustomProduct(pickerState.searchQuery)"
+                        class="p-4 mb-2 rounded-lg border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5 cursor-pointer flex items-center gap-3 transition-colors"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <div>
+                            <div class="font-bold">使用「{{ pickerState.searchQuery }}」</div>
+                            <div class="text-xs opacity-70">作為自定義商品名稱</div>
+                        </div>
+                    </div>
+
+                    <!-- List Items -->
+                    <div 
+                        v-for="prod in filteredProducts" 
+                        :key="prod.id"
+                        @click="selectProduct(prod)"
+                        class="p-4 mb-2 rounded-lg bg-slate-50 dark:bg-slate-700/30 hover:bg-primary/10 dark:hover:bg-primary/20 cursor-pointer border border-slate-100 dark:border-slate-700/50 flex items-center transition-colors active:scale-[0.98]"
+                    >
+                        <span class="font-bold text-slate-800 dark:text-slate-200 text-lg">{{ prod.name }}</span>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div v-if="filteredProducts.length === 0 && !pickerState.searchQuery" class="text-center py-10 text-slate-400 dark:text-slate-500">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <p>請輸入關鍵字搜尋商品</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </transition>
 
     <!-- Copy Day Modal -->
     <transition name="modal">
@@ -283,22 +388,27 @@
             <div class="space-y-3">
                 <div v-for="(item, idx) in block.items" :key="idx" class="grid grid-cols-12 gap-3 items-center bg-slate-50 dark:bg-dark/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
                     
-                    <!-- Product Search/Select -->
-                    <div class="col-span-7 sm:col-span-8 relative">
+                    <!-- Product Selection (Trigger Picker) -->
+                    <div class="col-span-7 sm:col-span-8 relative group cursor-pointer" @click="$emit('open-picker', item)">
                         <label class="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-bold mb-0.5 block">選擇商品</label>
-                        <input 
-                            list="product-options" 
-                            :value="item.productId ? getProductName(item.productId) : (item.unknownName || '')"
-                            @input="handleProductSelect($event, item)"
-                            @change="handleProductSelect($event, item)"
-                            :placeholder="item.unknownName ? '未知: ' + item.unknownName : '搜尋商品...'"
-                            :class="[
-                                'w-full bg-white dark:bg-slate-800 text-sm border rounded-md px-2 py-1.5 focus:ring-1 outline-none transition-colors',
-                                !item.productId && item.unknownName 
-                                    ? 'border-red-500 text-red-500 dark:text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500' 
-                                    : 'border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white focus:border-primary focus:ring-primary'
-                            ]"
-                        >
+                        <div class="relative">
+                            <input 
+                                type="text"
+                                readonly
+                                :value="item.productId ? getProductName(item.productId) : (item.unknownName || '')"
+                                :placeholder="item.unknownName ? '未知: ' + item.unknownName : '點擊選擇商品...'"
+                                :class="[
+                                    'w-full bg-white dark:bg-slate-800 text-sm border rounded-md px-2 py-1.5 focus:ring-1 outline-none transition-colors cursor-pointer',
+                                    !item.productId && item.unknownName 
+                                        ? 'border-red-500 text-red-500 dark:text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500' 
+                                        : 'border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white focus:border-primary focus:ring-primary'
+                                ]"
+                            >
+                            <!-- Chevron Icon to indicate dropdown behavior -->
+                            <div class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Quantity Input -->
@@ -318,7 +428,7 @@
 
                     <!-- Delete Item -->
                     <div class="col-span-1 text-center flex items-center justify-center">
-                        <button type="button" @click="$emit('remove-item', idx)" class="text-slate-400 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 mt-4 transition-colors">
+                        <button type="button" @click.stop="$emit('remove-item', idx)" class="text-slate-400 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 mt-4 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
@@ -333,10 +443,8 @@
     </div>
 </template>
 
-<datalist id="product-options"></datalist>
-
 <script type="module">
-    import { createApp, ref, reactive, computed, onMounted, watch } from 'vue';
+    import { createApp, ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
     import { initializeApp } from 'firebase/app';
     import { getFirestore, collection, onSnapshot } from 'firebase/firestore';
 
@@ -364,25 +472,13 @@
     const TimeBlockSection = {
         template: '#time-block-section-template',
         props: ['block', 'products'],
-        emits: ['add-item', 'remove-item', 'delete-block'],
+        emits: ['add-item', 'remove-item', 'delete-block', 'open-picker'],
         setup(props) {
             const getProduct = (id) => props.products.find(p => p.id === id);
             const getProductName = (id) => { const p = getProduct(id); return p ? p.name : ''; };
             const getProductUnit = (id) => { const p = getProduct(id); return p ? p.unit : '-'; };
 
-            const handleProductSelect = (event, item) => {
-                const val = event.target.value;
-                const product = props.products.find(p => p.name === val);
-                if (product) {
-                    item.productId = product.id;
-                    item.unknownName = null;
-                } else {
-                    item.productId = '';
-                    item.unknownName = val; // Store custom name if needed
-                }
-            };
-
-            return { getProductName, getProductUnit, handleProductSelect };
+            return { getProductName, getProductUnit };
         }
     };
 
@@ -429,6 +525,22 @@
                 return [...weeklyPlan.value[currentDay.value]].sort((a, b) => a.time.localeCompare(b.time));
             });
 
+            // Helper for report: Get sorted blocks for ANY day
+            const getSortedBlocks = (day) => {
+                if(!weeklyPlan.value[day]) return [];
+                return [...weeklyPlan.value[day]].sort((a, b) => a.time.localeCompare(b.time));
+            };
+
+            // Helper for report: Product Info
+            const getProduct = (id) => products.value.find(p => p.id === id);
+            const getProductName = (id) => { const p = getProduct(id); return p ? p.name : ''; };
+            const getProductUnit = (id) => { const p = getProduct(id); return p ? p.unit : '-'; };
+
+            // Computed: Check if there is ANY data in the whole week
+            const hasAnyData = computed(() => {
+                return Object.values(weeklyPlan.value).some(dayArr => dayArr.length > 0);
+            });
+
             // --- SUMMARY LOGIC ---
             const weeklySummary = computed(() => {
                 const summary = {};
@@ -470,6 +582,53 @@
             const showConfirm = (message) => new Promise(r => { modalState.type='confirm'; modalState.message=message; modalState.isOpen=true; modalState.resolve=r; });
             const showAlert = (message) => new Promise(r => { modalState.type='alert'; modalState.message=message; modalState.isOpen=true; modalState.resolve=r; });
             const closeModal = (result) => { modalState.isOpen=false; if(modalState.resolve) { modalState.resolve(result); modalState.resolve=null; }};
+
+            // --- PRODUCT PICKER LOGIC ---
+            const pickerState = reactive({
+                isOpen: false,
+                searchQuery: '',
+                targetItem: null // Reference to the item object being edited
+            });
+            const pickerSearchInput = ref(null);
+
+            const openPicker = (item) => {
+                pickerState.targetItem = item;
+                // If item already has a name, pre-fill search (optional, or keep empty to search new)
+                pickerState.searchQuery = ''; 
+                pickerState.isOpen = true;
+                nextTick(() => {
+                    if(pickerSearchInput.value) pickerSearchInput.value.focus();
+                });
+            };
+
+            const closePicker = () => {
+                pickerState.isOpen = false;
+                pickerState.targetItem = null;
+                pickerState.searchQuery = '';
+            };
+
+            const selectProduct = (product) => {
+                if (pickerState.targetItem) {
+                    pickerState.targetItem.productId = product.id;
+                    pickerState.targetItem.unknownName = null;
+                }
+                closePicker();
+            };
+
+            const selectCustomProduct = (name) => {
+                if (pickerState.targetItem) {
+                    pickerState.targetItem.productId = '';
+                    pickerState.targetItem.unknownName = name;
+                }
+                closePicker();
+            };
+
+            const filteredProducts = computed(() => {
+                const q = pickerState.searchQuery.toLowerCase().trim();
+                if(!q) return products.value;
+                return products.value.filter(p => p.name.toLowerCase().includes(q));
+            });
+
 
             // --- COPY SCHEDULE LOGIC ---
             const copyModal = reactive({ isOpen: false, selectedDays: [] });
@@ -523,23 +682,8 @@
                 if (!db) return;
                 onSnapshot(collection(db, "products"), (snapshot) => {
                     products.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.name.localeCompare(b.name));
-                    updateDatalistDOM();
                 });
             });
-
-            const updateDatalistDOM = () => {
-                const el = document.getElementById('product-options');
-                if(el) {
-                    el.innerHTML = '';
-                    products.value.forEach(p => {
-                        const opt = document.createElement('option');
-                        opt.value = p.name;
-                        opt.textContent = `單位: ${p.unit}`;
-                        el.appendChild(opt);
-                    });
-                }
-            };
-            watch(products, updateDatalistDOM, { flush: 'post' });
 
             // --- EXPORT ---
             const downloadImage = () => {
@@ -563,7 +707,11 @@
                 modalState, copyModal, weeklySummary, isDark, toggleTheme,
                 addTimeBlock, removeTimeBlock, addItemToBlock, removeItemFromBlock,
                 openCopyModal, closeCopyModal, submitCopy,
-                closeModal, downloadImage
+                closeModal, downloadImage,
+                // New exports for the summary view
+                getSortedBlocks, getProductName, getProductUnit, hasAnyData,
+                // Picker exports
+                pickerState, openPicker, closePicker, selectProduct, selectCustomProduct, filteredProducts, pickerSearchInput
             };
         }
     });
