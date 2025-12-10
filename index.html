@@ -163,32 +163,37 @@
             </button>
         </div>
 
-        <!-- Weekly Summary Section (Print Area) -->
-        <div id="capture-area" class="mt-12 bg-white text-slate-900 rounded-xl overflow-hidden shadow-xl mb-12 border border-slate-200 dark:border-none">
-            <div class="bg-primary px-6 py-4 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white flex items-center gap-2">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                    本週採購總清單
-                </h3>
-                <div class="text-xs text-white/80 no-print">自動統計所有天數</div>
-            </div>
+        <!-- Weekly Summary Section (Print Area Wrapper) -->
+        <div class="mt-12 rounded-xl overflow-hidden shadow-xl mb-12 border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface transition-colors duration-300">
             
-            <div class="p-6">
-                <div v-if="Object.keys(weeklySummary).length === 0" class="text-center text-slate-400 py-8">
-                    尚未安排任何行程，請先至上方填寫每日規劃。
+            <!-- Actual Capture Target (Content) -->
+            <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300">
+                <div class="px-6 py-4 flex justify-between items-center transition-colors duration-300 bg-primary dark:bg-slate-700">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        總清單
+                    </h3>
+                    <div class="text-xs text-white/80 no-print">自動統計所有天數</div>
                 </div>
-                <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-center border-b border-slate-200 pb-2">
-                        <span class="font-bold text-lg text-slate-800">{{ item.name }}</span>
-                        <span class="font-mono text-xl text-primary font-bold bg-purple-50 px-2 rounded">
-                            {{ item.totalQuantity }} <span class="text-xs text-slate-500 ml-1">{{ item.unit }}</span>
-                        </span>
+                
+                <div class="p-6">
+                    <div v-if="Object.keys(weeklySummary).length === 0" class="text-center text-slate-400 py-8">
+                        尚未安排任何行程，請先至上方填寫每日規劃。
+                    </div>
+                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
+                            <span class="font-bold text-lg text-slate-800 dark:text-slate-200">{{ item.name }}</span>
+                            <span class="font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300">
+                                {{ item.totalQuantity }} <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">{{ item.unit }}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-slate-100 px-6 py-4 border-t border-slate-200 flex justify-end gap-3 no-print">
-                <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2 text-sm">
+            <!-- Controls (Outside capture area) -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 no-print">
+                <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-slate-500 transition-colors flex items-center gap-2 text-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     下載圖片
                 </button>
@@ -539,7 +544,13 @@
             // --- EXPORT ---
             const downloadImage = () => {
                 const element = document.getElementById('capture-area');
-                html2canvas(element, { scale: 2 }).then(canvas => {
+                const bgColor = isDark.value ? '#1E293B' : '#FFFFFF'; // Explicit background color
+                
+                html2canvas(element, { 
+                    scale: 2,
+                    backgroundColor: bgColor,
+                    useCORS: true
+                }).then(canvas => {
                     const link = document.createElement('a');
                     link.download = 'weekly-shopping-list.png';
                     link.href = canvas.toDataURL();
