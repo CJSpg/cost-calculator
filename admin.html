@@ -8,6 +8,13 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Init theme immediately to prevent flash
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -17,6 +24,8 @@
                         secondary: '#EC4899', // Pink 500
                         dark: '#0F172A', // Slate 900
                         surface: '#1E293B', // Slate 800
+                        light: '#F8FAFC', // Slate 50
+                        'surface-light': '#FFFFFF', // White
                     }
                 }
             }
@@ -37,49 +46,72 @@
     <style>
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         .modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
         .modal-enter-from, .modal-leave-to { opacity: 0; }
+        
+        /* Hide number spin buttons */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
-<body class="bg-dark text-slate-200 min-h-screen font-sans">
+<body class="bg-light dark:bg-dark text-slate-800 dark:text-slate-200 min-h-screen font-sans transition-colors duration-300">
 
 <div id="app" class="flex flex-col min-h-screen">
     
     <!-- Header -->
-    <header class="bg-surface border-b border-slate-700 shadow-lg sticky top-0 z-40">
+    <header class="bg-surface-light dark:bg-surface border-b border-slate-200 dark:border-slate-700 shadow-lg sticky top-0 z-40 transition-colors duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <h1 class="text-xl font-bold tracking-wide text-white">WeeklyPlan <span class="text-slate-500 font-normal">Admin</span></h1>
+                <h1 class="text-xl font-bold tracking-wide text-slate-900 dark:text-white">WeeklyPlan <span class="text-slate-500 font-normal">Admin</span></h1>
             </div>
             
-            <a href="index.html" class="px-4 py-2 rounded-md bg-slate-700 text-white text-sm hover:bg-slate-600 transition-colors flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                返回計算機
-            </a>
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle -->
+                <button 
+                    @click="toggleTheme" 
+                    class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                    <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+
+                <a href="index.html" class="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-white text-sm transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    返回計算機
+                </a>
+            </div>
         </div>
     </header>
 
     <!-- Content -->
-    <main class="flex-grow p-4 sm:p-6 max-w-5xl mx-auto w-full">
+    <main class="flex-grow p-4 sm:p-6 max-w-6xl mx-auto w-full relative z-0">
         
-        <div class="bg-surface rounded-xl border border-slate-700 p-6 shadow-xl">
-            <h2 class="text-xl font-bold text-white mb-4">商品與單位設定</h2>
-            <p class="text-sm text-slate-400 mb-6">在此設定您常用的食材名稱與單位 (例如: g, ml, 顆, 包)。變更將即時同步至計算機。</p>
+        <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-xl transition-colors duration-300">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">商品與成本設定</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">設定商品名稱、單位以及購買成本。這些資訊將同步至資料庫。</p>
 
             <!-- Add New -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-8 bg-dark/30 p-4 rounded-lg border border-slate-700">
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-8 bg-slate-50 dark:bg-dark/30 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-medium text-slate-400 mb-1">食材名稱</label>
-                    <input v-model="newProduct.name" type="text" placeholder="例如：雞蛋" class="w-full bg-surface border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">食材名稱</label>
+                    <input v-model="newProduct.name" type="text" placeholder="例如：雞蛋" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">單位</label>
-                    <input v-model="newProduct.unit" type="text" placeholder="顆" class="w-full bg-surface border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">單位</label>
+                    <input v-model="newProduct.unit" type="text" placeholder="顆" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包數量</label>
+                    <input v-model.number="newProduct.packSize" type="number" step="0.01" placeholder="1" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包價格 ($)</label>
+                    <input v-model.number="newProduct.packPrice" type="number" step="1" placeholder="100" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-primary hover:bg-violet-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors">
                     <span v-if="loading">...</span>
@@ -88,31 +120,43 @@
             </div>
 
             <!-- Table -->
-            <div class="overflow-hidden rounded-lg border border-slate-700">
+            <div class="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-700/50 text-slate-300 uppercase font-medium">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 uppercase font-medium">
                         <tr>
                             <th class="px-6 py-4">名稱</th>
                             <th class="px-6 py-4 text-center">單位</th>
+                            <th class="px-6 py-4 text-center">整包數量</th>
+                            <th class="px-6 py-4 text-center">整包價格</th>
+                            <th class="px-6 py-4 text-right">換算單價</th>
                             <th class="px-6 py-4 text-center">操作</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-700">
-                        <tr v-for="product in products" :key="product.id" class="hover:bg-slate-700/30 transition-colors">
+                    <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-transparent">
+                        <tr v-for="product in products" :key="product.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
                             <td class="px-6 py-3">
-                                <input v-model="product.name" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-600 focus:outline-none w-full py-1 text-white">
+                                <input v-model="product.name" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-full py-1 text-slate-800 dark:text-white transition-colors">
                             </td>
                             <td class="px-6 py-3 text-center">
-                                <input v-model="product.unit" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-600 focus:outline-none w-16 text-center py-1 text-slate-400">
+                                <input v-model="product.unit" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-16 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
                             </td>
                             <td class="px-6 py-3 text-center">
-                                <button @click="deleteProduct(product.id)" type="button" class="text-slate-500 hover:text-red-400 transition-colors">
+                                <input type="number" v-model.number="product.packSize" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-24 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
+                            </td>
+                            <td class="px-6 py-3 text-center">
+                                <input type="number" v-model.number="product.packPrice" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-24 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
+                            </td>
+                            <td class="px-6 py-3 text-right font-mono text-slate-600 dark:text-slate-400">
+                                ${{ calculateUnitPrice(product).toFixed(2) }}
+                            </td>
+                            <td class="px-6 py-3 text-center">
+                                <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                                     刪除
                                 </button>
                             </td>
                         </tr>
                         <tr v-if="products.length === 0">
-                            <td colspan="3" class="px-6 py-8 text-center text-slate-500">
+                            <td colspan="6" class="px-6 py-8 text-center text-slate-500">
                                 尚未新增任何商品
                             </td>
                         </tr>
@@ -127,11 +171,11 @@
     <transition name="modal">
         <div v-if="modalState.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div @click="closeModal(false)" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-            <div class="bg-surface rounded-xl border border-slate-600 shadow-2xl max-w-sm w-full relative z-10 p-6">
-                <h3 class="text-lg font-bold text-white mb-2">{{ modalState.type === 'alert' ? '🔔 提示' : '⚠️ 確認' }}</h3>
-                <p class="text-slate-300 mb-6">{{ modalState.message }}</p>
+            <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-600 shadow-2xl max-w-sm w-full relative z-10 p-6 transition-colors duration-300">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">{{ modalState.type === 'alert' ? '🔔 提示' : '⚠️ 確認' }}</h3>
+                <p class="text-slate-600 dark:text-slate-300 mb-6">{{ modalState.message }}</p>
                 <div class="flex justify-end gap-3">
-                    <button v-if="modalState.type === 'confirm'" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white">取消</button>
+                    <button v-if="modalState.type === 'confirm'" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white">取消</button>
                     <button @click="closeModal(true)" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-violet-600">確定</button>
                 </div>
             </div>
@@ -170,6 +214,19 @@
         setup() {
             const products = ref([]);
             const loading = ref(false);
+            const isDark = ref(localStorage.getItem('theme') !== 'light');
+
+            // --- THEME LOGIC ---
+            const toggleTheme = () => {
+                isDark.value = !isDark.value;
+                if(isDark.value) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            };
 
             // --- FIRESTORE ---
             onMounted(() => {
@@ -180,15 +237,24 @@
             });
 
             // --- PRODUCT CRUD ---
-            const newProduct = reactive({ name: '', unit: '' });
-            const isFormValid = computed(() => newProduct.name && newProduct.unit);
+            const newProduct = reactive({ name: '', unit: '', packSize: 1, packPrice: 0 });
+            const isFormValid = computed(() => newProduct.name && newProduct.unit && newProduct.packSize > 0);
             
             const addProduct = async () => {
                 if (!db || !isFormValid.value) return;
                 loading.value = true;
                 try {
-                    await addDoc(collection(db, "products"), { name: newProduct.name, unit: newProduct.unit, createdAt: serverTimestamp() });
-                    newProduct.name = ''; newProduct.unit = '';
+                    await addDoc(collection(db, "products"), { 
+                        name: newProduct.name, 
+                        unit: newProduct.unit, 
+                        packSize: newProduct.packSize,
+                        packPrice: newProduct.packPrice,
+                        createdAt: serverTimestamp() 
+                    });
+                    newProduct.name = ''; 
+                    newProduct.unit = '';
+                    newProduct.packSize = 1;
+                    newProduct.packPrice = 0;
                 } catch(e) {
                     console.error(e);
                     await showAlert('新增失敗：' + e.message);
@@ -197,13 +263,23 @@
             };
 
             const updateProduct = async (p) => { 
-                if(db) await updateDoc(doc(db, "products", p.id), { name: p.name, unit: p.unit }); 
+                if(db) await updateDoc(doc(db, "products", p.id), { 
+                    name: p.name, 
+                    unit: p.unit,
+                    packSize: p.packSize,
+                    packPrice: p.packPrice
+                }); 
             };
             
             const deleteProduct = async (id) => { 
                 if(db && await showConfirm('確定要永久刪除此商品嗎？')) {
                     await deleteDoc(doc(db, "products", id)); 
                 }
+            };
+
+            const calculateUnitPrice = (p) => {
+                if(!p.packSize || p.packSize === 0) return 0;
+                return (p.packPrice || 0) / p.packSize;
             };
 
             // --- MODAL LOGIC ---
@@ -214,8 +290,8 @@
 
             return {
                 products, newProduct, loading, isFormValid,
-                addProduct, updateProduct, deleteProduct,
-                modalState, closeModal
+                addProduct, updateProduct, deleteProduct, calculateUnitPrice,
+                modalState, closeModal, isDark, toggleTheme
             };
         }
     });

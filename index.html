@@ -8,6 +8,13 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Init theme immediately to prevent flash
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -17,6 +24,8 @@
                         secondary: '#EC4899', // Pink 500
                         dark: '#0F172A', // Slate 900
                         surface: '#1E293B', // Slate 800
+                        light: '#F8FAFC', // Slate 50
+                        'surface-light': '#FFFFFF', // White
                     }
                 }
             }
@@ -40,8 +49,8 @@
     <style>
         /* Custom scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
         input[type=number]::-webkit-inner-spin-button, 
@@ -64,22 +73,29 @@
         }
     </style>
 </head>
-<body class="bg-dark text-slate-200 min-h-screen font-sans">
+<body class="bg-light dark:bg-dark text-slate-800 dark:text-slate-200 min-h-screen font-sans transition-colors duration-300">
 
 <div id="app" class="flex flex-col min-h-screen">
     
     <!-- Header -->
-    <header class="bg-surface border-b border-slate-700 shadow-lg sticky top-0 z-40 no-print">
+    <header class="bg-surface-light dark:bg-surface border-b border-slate-200 dark:border-slate-700 shadow-sm sticky top-0 z-40 no-print transition-colors duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                <h1 class="text-xl font-bold tracking-wide text-white">Weekly<span class="text-primary">Plan</span></h1>
+                <h1 class="text-xl font-bold tracking-wide text-slate-900 dark:text-white">Weekly<span class="text-primary">Plan</span></h1>
             </div>
             
-            <a href="admin.html" class="text-xs text-slate-500 hover:text-primary transition-colors flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                後台
-            </a>
+            <!-- Theme Toggle Button -->
+            <button 
+                @click="toggleTheme" 
+                class="p-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                title="切換深色/淺色模式"
+            >
+                <!-- Sun Icon (for Dark Mode) -->
+                <svg v-if="isDark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <!-- Moon Icon (for Light Mode) -->
+                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
         </div>
     </header>
 
@@ -97,7 +113,7 @@
                     'flex-shrink-0 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 border border-transparent',
                     currentDay === day 
                         ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' 
-                        : 'bg-surface text-slate-400 hover:bg-slate-700 hover:border-slate-600'
+                        : 'bg-white dark:bg-surface text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
                 ]"
             >
                 {{ day }}
@@ -105,16 +121,16 @@
         </div>
 
         <!-- Controls & Current Day Header -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-4 rounded-xl border border-slate-700 mt-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-surface p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm mt-6 transition-colors duration-300">
             <div>
-                <h2 class="text-2xl font-bold text-white">{{ currentDay }} <span class="text-slate-500 text-base font-normal">行程規劃</span></h2>
-                <p class="text-xs text-slate-400 mt-1">安排今日的飲食時段與數量</p>
+                <h2 class="text-2xl font-bold text-slate-800 dark:text-white">{{ currentDay }} <span class="text-slate-500 dark:text-slate-500 text-base font-normal">行程規劃</span></h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">安排今日的飲食時段與數量</p>
             </div>
             <div class="flex gap-2">
                 <button 
                     @click="openCopyModal"
                     type="button"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors text-sm font-medium"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-white transition-colors text-sm font-medium"
                 >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                     複製行程到別天
@@ -140,7 +156,7 @@
             <button 
                 @click="addTimeBlock"
                 type="button"
-                class="w-full mt-6 bg-dark border-2 border-dashed border-slate-600 hover:border-primary hover:text-primary text-slate-400 rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-all group"
+                class="w-full mt-6 bg-slate-50 dark:bg-dark border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-primary hover:text-primary text-slate-400 dark:text-slate-500 rounded-xl p-6 flex flex-col items-center justify-center gap-2 transition-all group"
             >
                 <svg class="w-8 h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 <span class="font-medium">新增時段</span>
@@ -148,7 +164,7 @@
         </div>
 
         <!-- Weekly Summary Section (Print Area) -->
-        <div id="capture-area" class="mt-12 bg-white text-slate-900 rounded-xl overflow-hidden shadow-xl mb-12">
+        <div id="capture-area" class="mt-12 bg-white text-slate-900 rounded-xl overflow-hidden shadow-xl mb-12 border border-slate-200 dark:border-none">
             <div class="bg-primary px-6 py-4 flex justify-between items-center">
                 <h3 class="text-xl font-bold text-white flex items-center gap-2">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
@@ -185,23 +201,27 @@
     <transition name="modal">
         <div v-if="copyModal.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div @click="closeCopyModal" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-            <div class="bg-surface rounded-xl border border-slate-600 shadow-2xl max-w-md w-full relative z-10 p-6">
-                <h3 class="text-lg font-bold text-white mb-4">複製「{{ currentDay }}」的行程到...</h3>
+            <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-600 shadow-2xl max-w-md w-full relative z-10 p-6 transition-colors duration-300">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">複製「{{ currentDay }}」的行程到...</h3>
                 
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <label 
                         v-for="day in weekDays.filter(d => d !== currentDay)" 
                         :key="day" 
-                        class="flex items-center gap-3 p-3 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-700/50 transition-colors"
-                        :class="copyModal.selectedDays.includes(day) ? 'bg-primary/20 border-primary' : ''"
+                        class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                        :class="[
+                            copyModal.selectedDays.includes(day) 
+                                ? 'bg-primary/10 border-primary' 
+                                : 'border-slate-200 dark:border-slate-700'
+                        ]"
                     >
-                        <input type="checkbox" :value="day" v-model="copyModal.selectedDays" class="w-4 h-4 rounded border-slate-500 text-primary focus:ring-primary bg-dark">
-                        <span class="text-slate-200">{{ day }}</span>
+                        <input type="checkbox" :value="day" v-model="copyModal.selectedDays" class="w-4 h-4 rounded border-slate-300 dark:border-slate-500 text-primary focus:ring-primary bg-white dark:bg-dark">
+                        <span class="text-slate-700 dark:text-slate-200">{{ day }}</span>
                     </label>
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <button @click="closeCopyModal" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white">取消</button>
+                    <button @click="closeCopyModal" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white">取消</button>
                     <button @click="submitCopy" class="px-6 py-2 rounded-lg bg-primary text-white hover:bg-violet-600 font-medium">確認複製</button>
                 </div>
             </div>
@@ -212,11 +232,11 @@
     <transition name="modal">
         <div v-if="modalState.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div @click="closeModal(false)" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-            <div class="bg-surface rounded-xl border border-slate-600 shadow-2xl max-w-sm w-full relative z-10 p-6">
-                <h3 class="text-lg font-bold text-white mb-2">{{ modalState.type === 'alert' ? '🔔 提示' : '⚠️ 確認' }}</h3>
-                <p class="text-slate-300 mb-6">{{ modalState.message }}</p>
+            <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-600 shadow-2xl max-w-sm w-full relative z-10 p-6 transition-colors duration-300">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">{{ modalState.type === 'alert' ? '🔔 提示' : '⚠️ 確認' }}</h3>
+                <p class="text-slate-600 dark:text-slate-300 mb-6">{{ modalState.message }}</p>
                 <div class="flex justify-end gap-3">
-                    <button v-if="modalState.type === 'confirm'" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white">取消</button>
+                    <button v-if="modalState.type === 'confirm'" @click="closeModal(false)" class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white">取消</button>
                     <button @click="closeModal(true)" class="px-4 py-2 rounded-lg bg-primary text-white hover:bg-violet-600">確定</button>
                 </div>
             </div>
@@ -227,18 +247,18 @@
 
 <!-- Template for Time Block Section Component -->
 <template id="time-block-section-template">
-    <div class="bg-surface rounded-xl border border-slate-700 shadow-sm overflow-hidden transition-all hover:border-slate-600">
-        <div class="bg-slate-700/30 px-6 py-3 border-b border-slate-700 flex justify-between items-center gap-4">
+    <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:border-primary/50 dark:hover:border-slate-600">
+        <div class="bg-slate-50 dark:bg-slate-700/30 px-6 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center gap-4">
             
             <!-- Time Input -->
             <div class="flex items-center gap-3">
-                <div class="bg-slate-800 p-2 rounded-lg border border-slate-600">
+                <div class="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
                     <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <input 
                     type="time" 
                     v-model="block.time" 
-                    class="bg-transparent text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-primary/50 rounded px-1 cursor-pointer"
+                    class="bg-transparent text-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 rounded px-1 cursor-pointer"
                 >
             </div>
 
@@ -246,7 +266,7 @@
                 <button 
                     type="button"
                     @click="$emit('delete-block')" 
-                    class="text-slate-500 hover:text-red-400 transition-colors p-1.5 hover:bg-red-500/10 rounded-lg" 
+                    class="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg" 
                     title="刪除此時段"
                 >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -254,13 +274,13 @@
             </div>
         </div>
 
-        <div class="p-4">
+        <div class="p-4 bg-white dark:bg-surface">
             <div class="space-y-3">
-                <div v-for="(item, idx) in block.items" :key="idx" class="grid grid-cols-12 gap-3 items-center bg-dark/50 p-3 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-colors">
+                <div v-for="(item, idx) in block.items" :key="idx" class="grid grid-cols-12 gap-3 items-center bg-slate-50 dark:bg-dark/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
                     
                     <!-- Product Search/Select -->
                     <div class="col-span-7 sm:col-span-8 relative">
-                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">選擇商品</label>
+                        <label class="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-bold mb-0.5 block">選擇商品</label>
                         <input 
                             list="product-options" 
                             :value="item.productId ? getProductName(item.productId) : (item.unknownName || '')"
@@ -268,38 +288,38 @@
                             @change="handleProductSelect($event, item)"
                             :placeholder="item.unknownName ? '未知: ' + item.unknownName : '搜尋商品...'"
                             :class="[
-                                'w-full bg-slate-800 text-sm border rounded-md px-2 py-1.5 focus:ring-1 outline-none transition-colors',
+                                'w-full bg-white dark:bg-slate-800 text-sm border rounded-md px-2 py-1.5 focus:ring-1 outline-none transition-colors',
                                 !item.productId && item.unknownName 
-                                    ? 'border-red-500 text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500' 
-                                    : 'border-slate-600 text-white focus:border-primary focus:ring-primary'
+                                    ? 'border-red-500 text-red-500 dark:text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500' 
+                                    : 'border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white focus:border-primary focus:ring-primary'
                             ]"
                         >
                     </div>
 
                     <!-- Quantity Input -->
                     <div class="col-span-4 sm:col-span-3">
-                        <label class="text-[10px] text-slate-500 uppercase font-bold mb-0.5 block">數量</label>
+                        <label class="text-[10px] text-slate-500 dark:text-slate-500 uppercase font-bold mb-0.5 block">數量</label>
                         <div class="flex items-center">
                             <input 
                                 v-model.number="item.quantity" 
                                 type="number" 
                                 min="0" 
                                 step="0.5"
-                                class="w-full bg-slate-800 text-sm border border-slate-600 rounded-md px-2 py-1.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none text-center"
+                                class="w-full bg-white dark:bg-slate-800 text-sm border border-slate-300 dark:border-slate-600 rounded-md px-2 py-1.5 text-slate-800 dark:text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none text-center"
                             >
-                            <span class="text-xs text-slate-500 ml-1 whitespace-nowrap">{{ getProductUnit(item.productId) }}</span>
+                            <span class="text-xs text-slate-500 dark:text-slate-500 ml-1 whitespace-nowrap">{{ getProductUnit(item.productId) }}</span>
                         </div>
                     </div>
 
                     <!-- Delete Item -->
                     <div class="col-span-1 text-center flex items-center justify-center">
-                        <button type="button" @click="$emit('remove-item', idx)" class="text-slate-600 hover:text-red-400 mt-4 transition-colors">
+                        <button type="button" @click="$emit('remove-item', idx)" class="text-slate-400 hover:text-red-500 dark:text-slate-600 dark:hover:text-red-400 mt-4 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                 </div>
                 
-                <button type="button" @click="$emit('add-item')" class="w-full py-2 border border-dashed border-slate-600 rounded-lg text-slate-500 hover:text-primary hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium flex justify-center items-center gap-2 group">
+                <button type="button" @click="$emit('add-item')" class="w-full py-2 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-slate-500 dark:text-slate-500 hover:text-primary dark:hover:text-primary hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium flex justify-center items-center gap-2 group">
                     <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     新增食材
                 </button>
@@ -370,6 +390,19 @@
             const products = ref([]);
             const weekDays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
             const currentDay = ref('週一');
+            const isDark = ref(localStorage.getItem('theme') !== 'light');
+
+            // --- THEME LOGIC ---
+            const toggleTheme = () => {
+                isDark.value = !isDark.value;
+                if(isDark.value) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            };
 
             // --- DATA STRUCTURE: WEEKLY PLAN ---
             const weeklyPlan = ref({
@@ -516,7 +549,7 @@
 
             return {
                 currentDay, weekDays, weeklyPlan, sortedCurrentDayLog, products,
-                modalState, copyModal, weeklySummary,
+                modalState, copyModal, weeklySummary, isDark, toggleTheme,
                 addTimeBlock, removeTimeBlock, addItemToBlock, removeItemFromBlock,
                 openCopyModal, closeCopyModal, submitCopy,
                 closeModal, downloadImage
