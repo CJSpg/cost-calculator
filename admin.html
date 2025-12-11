@@ -91,36 +91,38 @@
     <!-- Content -->
     <main class="flex-grow p-4 sm:p-6 max-w-6xl mx-auto w-full relative z-0">
         
-        <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-xl transition-colors duration-300">
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-4">商品與成本設定</h2>
+        <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 shadow-xl transition-colors duration-300">
+            <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">商品與成本設定</h2>
             <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">設定商品名稱、單位以及購買成本。這些資訊將同步至資料庫。</p>
 
-            <!-- Add New -->
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-8 bg-slate-50 dark:bg-dark/30 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                <div class="md:col-span-2">
+            <!-- Add New (Responsive Grid) -->
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end mb-8 bg-slate-50 dark:bg-dark/30 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+                <div class="col-span-2 md:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">食材名稱</label>
                     <input v-model="newProduct.name" type="text" placeholder="例如：雞蛋" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
-                <div>
+                <div class="col-span-1 md:col-span-1">
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">單位</label>
                     <input v-model="newProduct.unit" type="text" placeholder="顆" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
-                <div>
+                <div class="col-span-1 md:col-span-1">
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包數量</label>
                     <input v-model.number="newProduct.packSize" type="number" step="0.01" placeholder="1" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
-                <div>
+                <div class="col-span-1 md:col-span-1">
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包價格 ($)</label>
                     <input v-model.number="newProduct.packPrice" type="number" step="1" placeholder="100" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
-                <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-primary hover:bg-violet-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                    <span v-if="loading">...</span>
-                    <span v-else>新增</span>
-                </button>
+                <div class="col-span-1 md:col-span-1">
+                    <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-primary hover:bg-violet-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm">
+                        <span v-if="loading">...</span>
+                        <span v-else>新增</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Table -->
-            <div class="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+            <!-- DESKTOP View: Table -->
+            <div class="hidden md:block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 uppercase font-medium">
                         <tr>
@@ -150,8 +152,8 @@
                                 ${{ calculateUnitPrice(product).toFixed(2) }}
                             </td>
                             <td class="px-6 py-3 text-center">
-                                <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-                                    刪除
+                                <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </td>
                         </tr>
@@ -162,6 +164,48 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- MOBILE View: Cards -->
+            <div class="md:hidden space-y-4">
+                <div v-for="product in products" :key="product.id" class="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm">
+                    <!-- Row 1: Name -->
+                    <div class="mb-3">
+                        <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">商品名稱</label>
+                        <input v-model="product.name" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none text-base">
+                    </div>
+                    
+                    <!-- Row 2: Grid of Unit, Size, Price -->
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">單位</label>
+                            <input v-model="product.unit" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">整包數量</label>
+                            <input type="number" v-model.number="product.packSize" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">整包價格</label>
+                            <input type="number" v-model.number="product.packPrice" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Calculation & Action -->
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <div class="text-sm text-slate-600 dark:text-slate-400">
+                            換算單價：<span class="font-mono font-bold text-slate-800 dark:text-slate-200 text-base">${{ calculateUnitPrice(product).toFixed(2) }}</span> / {{ product.unit }}
+                        </div>
+                        <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700/50 flex items-center gap-1 text-xs font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            刪除
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="products.length === 0" class="text-center py-8 text-slate-400 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
+                    尚未新增任何商品
+                </div>
             </div>
         </div>
 
