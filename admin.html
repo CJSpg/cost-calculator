@@ -93,25 +93,25 @@
         
         <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 shadow-xl transition-colors duration-300">
             <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">商品與成本設定</h2>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">設定商品名稱、單位以及購買成本。這些資訊將同步至資料庫。</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">設定商品名稱、單位以及購買成本。系統將自動防止重複名稱。</p>
 
             <!-- Add New (Responsive Grid) -->
             <div class="grid grid-cols-2 md:grid-cols-6 gap-4 items-end mb-8 bg-slate-50 dark:bg-dark/30 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
                 <div class="col-span-2 md:col-span-2">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">食材名稱</label>
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">名稱</label>
                     <input v-model="newProduct.name" type="text" placeholder="例如：雞蛋" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                </div>
+                <div class="col-span-1 md:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">價格 ($)</label>
+                    <input v-model.number="newProduct.packPrice" type="number" step="1" placeholder="100" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                </div>
+                <div class="col-span-1 md:col-span-1">
+                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">數量</label>
+                    <input v-model.number="newProduct.packSize" type="number" step="0.01" placeholder="1" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <div class="col-span-1 md:col-span-1">
                     <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">單位</label>
                     <input v-model="newProduct.unit" type="text" placeholder="顆" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                </div>
-                <div class="col-span-1 md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包數量</label>
-                    <input v-model.number="newProduct.packSize" type="number" step="0.01" placeholder="1" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                </div>
-                <div class="col-span-1 md:col-span-1">
-                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">整包價格 ($)</label>
-                    <input v-model.number="newProduct.packPrice" type="number" step="1" placeholder="100" class="w-full bg-white dark:bg-surface border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                 </div>
                 <div class="col-span-1 md:col-span-1">
                     <button @click="addProduct" type="button" :disabled="!isFormValid" class="w-full bg-primary hover:bg-violet-600 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm">
@@ -127,35 +127,57 @@
                     <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 uppercase font-medium">
                         <tr>
                             <th class="px-6 py-4">名稱</th>
+                            <th class="px-6 py-4 text-center">價格</th>
+                            <th class="px-6 py-4 text-center">數量</th>
                             <th class="px-6 py-4 text-center">單位</th>
-                            <th class="px-6 py-4 text-center">整包數量</th>
-                            <th class="px-6 py-4 text-center">整包價格</th>
                             <th class="px-6 py-4 text-right">換算單價</th>
                             <th class="px-6 py-4 text-center">操作</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700 bg-white dark:bg-transparent">
                         <tr v-for="product in products" :key="product.id" class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                            <td class="px-6 py-3">
-                                <input v-model="product.name" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-full py-1 text-slate-800 dark:text-white transition-colors">
-                            </td>
-                            <td class="px-6 py-3 text-center">
-                                <input v-model="product.unit" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-16 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
-                            </td>
-                            <td class="px-6 py-3 text-center">
-                                <input type="number" v-model.number="product.packSize" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-24 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
-                            </td>
-                            <td class="px-6 py-3 text-center">
-                                <input type="number" v-model.number="product.packPrice" @change="updateProduct(product)" class="bg-transparent border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none w-24 text-center py-1 text-slate-500 dark:text-slate-400 transition-colors">
-                            </td>
-                            <td class="px-6 py-3 text-right font-mono text-slate-600 dark:text-slate-400">
-                                ${{ calculateUnitPrice(product).toFixed(2) }}
-                            </td>
-                            <td class="px-6 py-3 text-center">
-                                <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </td>
+                            
+                            <!-- VIEW MODE (Not Editing) -->
+                            <template v-if="editingId !== product.id">
+                                <td class="px-6 py-3 font-medium text-slate-800 dark:text-slate-200">{{ product.name }}</td>
+                                <td class="px-6 py-3 text-center text-slate-600 dark:text-slate-400">{{ product.packPrice }}</td>
+                                <td class="px-6 py-3 text-center text-slate-600 dark:text-slate-400">{{ product.packSize }}</td>
+                                <td class="px-6 py-3 text-center text-slate-600 dark:text-slate-400">{{ product.unit }}</td>
+                                <td class="px-6 py-3 text-right font-mono text-slate-600 dark:text-slate-400">
+                                    ${{ calculateUnitPrice(product).toFixed(2) }}
+                                </td>
+                                <td class="px-6 py-3 text-center flex justify-center gap-2">
+                                    <button @click="startEdit(product)" class="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                                        編輯
+                                    </button>
+                                    <button @click="deleteProduct(product.id)" class="px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/40 transition">
+                                        刪除
+                                    </button>
+                                </td>
+                            </template>
+
+                            <!-- EDIT MODE -->
+                            <template v-else>
+                                <td class="px-6 py-3">
+                                    <input v-model="editForm.name" class="w-full bg-white dark:bg-dark border border-primary rounded px-2 py-1 text-slate-800 dark:text-white outline-none">
+                                </td>
+                                <td class="px-6 py-3 text-center">
+                                    <input type="number" v-model.number="editForm.packPrice" class="w-20 text-center bg-white dark:bg-dark border border-primary rounded px-1 py-1 text-slate-800 dark:text-white outline-none">
+                                </td>
+                                <td class="px-6 py-3 text-center">
+                                    <input type="number" v-model.number="editForm.packSize" class="w-20 text-center bg-white dark:bg-dark border border-primary rounded px-1 py-1 text-slate-800 dark:text-white outline-none">
+                                </td>
+                                <td class="px-6 py-3 text-center">
+                                    <input v-model="editForm.unit" class="w-16 text-center bg-white dark:bg-dark border border-primary rounded px-1 py-1 text-slate-800 dark:text-white outline-none">
+                                </td>
+                                <td class="px-6 py-3 text-right text-slate-400">
+                                    -
+                                </td>
+                                <td class="px-6 py-3 text-center flex justify-center gap-2">
+                                    <button @click="saveEdit" class="px-3 py-1 bg-primary text-white rounded hover:bg-violet-600 transition">儲存</button>
+                                    <button @click="cancelEdit" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition">取消</button>
+                                </td>
+                            </template>
                         </tr>
                         <tr v-if="products.length === 0">
                             <td colspan="6" class="px-6 py-8 text-center text-slate-500">
@@ -168,39 +190,69 @@
 
             <!-- MOBILE View: Cards -->
             <div class="md:hidden space-y-4">
-                <div v-for="product in products" :key="product.id" class="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm">
-                    <!-- Row 1: Name -->
-                    <div class="mb-3">
-                        <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">商品名稱</label>
-                        <input v-model="product.name" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none text-base">
-                    </div>
+                <div v-for="product in products" :key="product.id" class="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm transition-all" :class="{'ring-2 ring-primary border-transparent': editingId === product.id}">
                     
-                    <!-- Row 2: Grid of Unit, Size, Price -->
-                    <div class="grid grid-cols-3 gap-3 mb-4">
-                        <div>
-                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">單位</label>
-                            <input v-model="product.unit" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                    <!-- VIEW MODE (Mobile) -->
+                    <template v-if="editingId !== product.id">
+                        <div class="mb-3">
+                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">商品名稱</label>
+                            <div class="text-lg font-bold text-slate-800 dark:text-white">{{ product.name }}</div>
                         </div>
-                        <div>
-                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">整包數量</label>
-                            <input type="number" v-model.number="product.packSize" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+                        
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">單位</label>
+                                <div class="text-center font-medium text-slate-700 dark:text-slate-300">{{ product.unit }}</div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">數量</label>
+                                <div class="text-center font-medium text-slate-700 dark:text-slate-300">{{ product.packSize }}</div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">價格</label>
+                                <div class="text-center font-medium text-slate-700 dark:text-slate-300">{{ product.packPrice }}</div>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1 block">整包價格</label>
-                            <input type="number" v-model.number="product.packPrice" @change="updateProduct(product)" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded px-2 py-2 text-center text-slate-800 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary outline-none">
-                        </div>
-                    </div>
 
-                    <!-- Row 3: Calculation & Action -->
-                    <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
-                        <div class="text-sm text-slate-600 dark:text-slate-400">
-                            換算單價：<span class="font-mono font-bold text-slate-800 dark:text-slate-200 text-base">${{ calculateUnitPrice(product).toFixed(2) }}</span> / {{ product.unit }}
+                        <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
+                            <div class="text-sm text-slate-600 dark:text-slate-400">
+                                單價：<span class="font-mono font-bold text-slate-800 dark:text-slate-200 text-base">${{ calculateUnitPrice(product).toFixed(2) }}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="startEdit(product)" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs font-bold">編輯</button>
+                                <button @click="deleteProduct(product.id)" class="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs font-bold">刪除</button>
+                            </div>
                         </div>
-                        <button @click="deleteProduct(product.id)" type="button" class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700/50 flex items-center gap-1 text-xs font-medium">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            刪除
-                        </button>
-                    </div>
+                    </template>
+
+                    <!-- EDIT MODE (Mobile) -->
+                    <template v-else>
+                        <div class="mb-3">
+                            <label class="text-[10px] uppercase font-bold text-primary mb-1 block">編輯名稱</label>
+                            <input v-model="editForm.name" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-slate-800 dark:text-white outline-none">
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">單位</label>
+                                <input v-model="editForm.unit" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">數量</label>
+                                <input type="number" v-model.number="editForm.packSize" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">價格</label>
+                                <input type="number" v-model.number="editForm.packPrice" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button @click="cancelEdit" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-sm font-bold">取消</button>
+                            <button @click="saveEdit" class="px-4 py-2 bg-primary text-white rounded text-sm font-bold shadow-lg shadow-primary/30">儲存變更</button>
+                        </div>
+                    </template>
+
                 </div>
 
                 <div v-if="products.length === 0" class="text-center py-8 text-slate-400 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg">
@@ -259,6 +311,10 @@
             const products = ref([]);
             const loading = ref(false);
             const isDark = ref(localStorage.getItem('theme') !== 'light');
+            
+            // Edit Mode State
+            const editingId = ref(null);
+            const editForm = reactive({ id: '', name: '', unit: '', packSize: 1, packPrice: 0 });
 
             // --- THEME LOGIC ---
             const toggleTheme = () => {
@@ -280,21 +336,37 @@
                 });
             });
 
+            // --- VALIDATION HELPER ---
+            const checkDuplicateName = (name, excludeId = null) => {
+                return products.value.some(p => {
+                    if (excludeId && p.id === excludeId) return false;
+                    return p.name.trim().toLowerCase() === name.trim().toLowerCase();
+                });
+            };
+
             // --- PRODUCT CRUD ---
             const newProduct = reactive({ name: '', unit: '', packSize: 1, packPrice: 0 });
             const isFormValid = computed(() => newProduct.name && newProduct.unit && newProduct.packSize > 0);
             
             const addProduct = async () => {
                 if (!db || !isFormValid.value) return;
+                
+                // Duplicate Check
+                if (checkDuplicateName(newProduct.name)) {
+                    await showAlert(`錯誤：商品名稱「${newProduct.name}」已存在！`);
+                    return;
+                }
+
                 loading.value = true;
                 try {
                     await addDoc(collection(db, "products"), { 
-                        name: newProduct.name, 
-                        unit: newProduct.unit, 
+                        name: newProduct.name.trim(), 
+                        unit: newProduct.unit.trim(), 
                         packSize: newProduct.packSize,
                         packPrice: newProduct.packPrice,
                         createdAt: serverTimestamp() 
                     });
+                    // Reset
                     newProduct.name = ''; 
                     newProduct.unit = '';
                     newProduct.packSize = 1;
@@ -306,13 +378,42 @@
                 loading.value = false;
             };
 
-            const updateProduct = async (p) => { 
-                if(db) await updateDoc(doc(db, "products", p.id), { 
-                    name: p.name, 
-                    unit: p.unit,
-                    packSize: p.packSize,
-                    packPrice: p.packPrice
-                }); 
+            // --- EDIT LOGIC ---
+            const startEdit = (product) => {
+                editingId.value = product.id;
+                // Copy data to edit form
+                editForm.id = product.id;
+                editForm.name = product.name;
+                editForm.unit = product.unit;
+                editForm.packSize = product.packSize;
+                editForm.packPrice = product.packPrice;
+            };
+
+            const cancelEdit = () => {
+                editingId.value = null;
+            };
+
+            const saveEdit = async () => {
+                if (!editForm.name || !editForm.unit || editForm.packSize <= 0) {
+                    await showAlert('欄位輸入不正確');
+                    return;
+                }
+
+                // Duplicate Check (Exclude self)
+                if (checkDuplicateName(editForm.name, editForm.id)) {
+                    await showAlert(`錯誤：商品名稱「${editForm.name}」已存在！`);
+                    return;
+                }
+
+                if(db) {
+                    await updateDoc(doc(db, "products", editForm.id), { 
+                        name: editForm.name.trim(), 
+                        unit: editForm.unit.trim(),
+                        packSize: editForm.packSize,
+                        packPrice: editForm.packPrice
+                    });
+                }
+                editingId.value = null;
             };
             
             const deleteProduct = async (id) => { 
@@ -334,7 +435,9 @@
 
             return {
                 products, newProduct, loading, isFormValid,
-                addProduct, updateProduct, deleteProduct, calculateUnitPrice,
+                // Edit State
+                editingId, editForm, startEdit, cancelEdit, saveEdit,
+                addProduct, deleteProduct, calculateUnitPrice,
                 modalState, closeModal, isDark, toggleTheme
             };
         }

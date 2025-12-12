@@ -486,6 +486,25 @@
         </div>
     </transition>
 
+    <!-- LINE Warning Modal -->
+    <transition name="modal">
+        <div v-if="lineModal.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div @click="lineModal.isOpen = false" class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+            <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-600 shadow-2xl max-w-sm w-full relative z-10 p-6 text-center transition-colors duration-300">
+                <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">請使用系統瀏覽器</h3>
+                <p class="text-slate-600 dark:text-slate-300 mb-6 text-sm text-left leading-relaxed">
+                    LINE 內建瀏覽器不支援檔案下載功能。<br>
+                    請點擊右上角的選單 <span class="inline-block bg-slate-200 dark:bg-slate-700 px-1 rounded">⋮</span> 或 <span class="inline-block bg-slate-200 dark:bg-slate-700 px-1 rounded">↗</span><br>
+                    並選擇 <span class="font-bold text-primary">「使用預設瀏覽器開啟」</span>。
+                </p>
+                <button @click="lineModal.isOpen = false" class="w-full px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white font-medium">我知道了</button>
+            </div>
+        </div>
+    </transition>
+
 </div>
 
 <!-- Template for Time Block Section Component -->
@@ -657,8 +676,18 @@
                 localStorage.setItem('weekly_meal_plan', JSON.stringify(newVal));
             }, { deep: true });
 
+            // --- BROWSER DETECTION (LINE) ---
+            const lineModal = reactive({ isOpen: false });
+            const isLineBrowser = () => {
+                return /Line/i.test(navigator.userAgent);
+            };
+
             // --- IMPORT / EXPORT LOGIC (FILE) ---
             const exportData = () => {
+                if (isLineBrowser()) {
+                    lineModal.isOpen = true;
+                    return;
+                }
                 const dataStr = JSON.stringify(weeklyPlan.value, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -914,6 +943,7 @@
                 });
                 
                 closeCopyModal();
+                showAlert("行程複製成功！");
             };
 
             // --- OPERATIONS ---
@@ -948,6 +978,10 @@
 
             // --- EXPORT ---
             const downloadImage = () => {
+                if (isLineBrowser()) {
+                    lineModal.isOpen = true;
+                    return;
+                }
                 const element = document.getElementById('capture-area');
                 const bgColor = isDark.value ? '#1E293B' : '#FFFFFF'; // Explicit background color
                 
@@ -976,7 +1010,9 @@
                 // Import/Export exports
                 exportData, triggerImport, handleImportFile, clearAllData, fileInput,
                 // Cloud Sync
-                cloudModal, openCloudModal, closeCloudModal, saveToCloud, loadFromCloud
+                cloudModal, openCloudModal, closeCloudModal, saveToCloud, loadFromCloud,
+                // LINE fix
+                lineModal
             };
         }
     });
