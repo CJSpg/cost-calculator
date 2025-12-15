@@ -233,11 +233,26 @@
                     </div>
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-start gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
-                            <!-- Adjusted layout for long names -->
-                            <span class="font-bold text-lg text-slate-800 dark:text-slate-200 flex-1 min-w-0 break-words leading-tight">{{ item.name }}</span>
-                            <span class="flex-shrink-0 font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300 whitespace-nowrap">
-                                {{ item.totalQuantity }} <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">{{ item.unit }}</span>
-                            </span>
+                            <!-- Left: Name -->
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-lg text-slate-800 dark:text-slate-200 break-words leading-tight">{{ item.name }}</div>
+                            </div>
+                            
+                            <!-- Right: Quantities -->
+                            <div class="flex flex-col items-end shrink-0">
+                                <!-- Consumption Qty -->
+                                <span class="font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300 whitespace-nowrap flex items-center">
+                                    {{ item.totalQuantity }} <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">{{ item.unit }}</span>
+                                    <span v-if="item.packSize && item.packageUnit" class="text-xs text-slate-500 dark:text-slate-400 ml-1">
+                                        ({{ item.packSize }}{{ item.unit }}/{{ item.packageUnit }})
+                                    </span>
+                                </span>
+                                
+                                <!-- Purchase Qty -->
+                                <span v-if="item.packSize && item.packageUnit" class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
+                                    ≈ {{ Math.ceil(item.totalQuantity / item.packSize) }} {{ item.packageUnit }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -266,7 +281,7 @@
                                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                             <span class="font-mono font-bold text-slate-700 dark:text-slate-200">{{ block.time }}</span>
                                             <!-- Label display in Summary -->
-                                            <span v-if="block.label" class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 ml-auto truncate max-w-[80px]">
+                                            <span v-if="block.label" class="text-xs px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 ml-auto truncate max-w-[80px]">
                                                 {{ block.label }}
                                             </span>
                                         </div>
@@ -344,6 +359,12 @@
                         >
                             讀取
                         </button>
+                         <button 
+                            @click="cloudModal.mode = 'templates'; fetchTemplates()" 
+                            :class="['flex-1 pb-2 text-sm font-bold border-b-2 transition-colors', cloudModal.mode === 'templates' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300']"
+                        >
+                            官方模板
+                        </button>
                     </div>
 
                     <!-- SAVE Mode -->
@@ -391,6 +412,40 @@
                             <svg v-if="cloudModal.loading" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             <span v-else>讀取</span>
                         </button>
+                    </div>
+
+                    <!-- TEMPLATES Mode -->
+                    <div v-if="cloudModal.mode === 'templates'" class="space-y-4">
+                        <p class="text-sm text-slate-600 dark:text-slate-300">
+                            選擇官方提供的 <span class="font-bold text-primary">預設行程</span> 快速開始。
+                            <br><span class="text-xs text-red-500">注意：這將會覆蓋您目前的畫面上的設定。</span>
+                        </p>
+
+                        <div class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                            <div v-if="templates.length === 0 && !cloudModal.loading" class="text-center py-6 text-slate-400">
+                                暫無官方模板
+                            </div>
+                            <div v-if="cloudModal.loading" class="text-center py-6 text-slate-400">
+                                <svg class="animate-spin h-6 w-6 mx-auto text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </div>
+                            
+                            <button 
+                                v-for="tpl in templates" 
+                                :key="tpl.id"
+                                @click="selectTemplate(tpl)"
+                                class="w-full text-left bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-3 transition-colors group"
+                            >
+                                <div class="flex justify-between items-start">
+                                    <div class="font-bold text-slate-800 dark:text-white group-hover:text-primary transition-colors">
+                                        {{ tpl.templateName || '未命名模板' }}
+                                    </div>
+                                    <svg class="w-4 h-4 text-slate-400 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                    {{ tpl.note || '無備註說明' }}
+                                </div>
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -621,7 +676,7 @@
 <script type="module">
     import { createApp, ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
     import { initializeApp } from 'firebase/app';
-    import { getFirestore, collection, onSnapshot, addDoc, getDoc, doc, serverTimestamp } from 'firebase/firestore';
+    import { getFirestore, collection, onSnapshot, addDoc, getDoc, doc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 
     // ==========================================
     // CONFIGURATION
@@ -770,11 +825,12 @@
             // --- CLOUD SYNC LOGIC (FIRESTORE) ---
             const cloudModal = reactive({
                 isOpen: false,
-                mode: 'save', // 'save' or 'load'
+                mode: 'save', // 'save', 'load', or 'templates'
                 loading: false,
                 savedId: '',
                 inputId: ''
             });
+            const templates = ref([]);
 
             const openCloudModal = () => {
                 cloudModal.isOpen = true;
@@ -782,6 +838,7 @@
                 cloudModal.inputId = '';
                 cloudModal.loading = false;
                 cloudModal.mode = 'save';
+                templates.value = []; // Reset templates
             };
             
             const closeCloudModal = () => {
@@ -795,12 +852,14 @@
                 }
                 cloudModal.loading = true;
                 try {
-                    // Save to 'plans' collection
+                    // Save to 'plans' collection with new structure fields initialized as default
                     const docRef = await addDoc(collection(db, "plans"), {
                         data: weeklyPlan.value,
                         note: summaryNote.value,
                         createdAt: serverTimestamp(),
-                        version: 2
+                        version: 2,
+                        isTemplate: false,
+                        templateName: ''
                     });
                     cloudModal.savedId = docRef.id;
                 } catch (e) {
@@ -825,18 +884,7 @@
 
                     if (docSnap.exists()) {
                         const cloudData = docSnap.data();
-                        // Support legacy cloud data without 'data' field nesting
-                        const planData = cloudData.data || cloudData; 
-                        
-                        // Check if it looks like a plan structure
-                        if (planData['週一'] || planData['Monday']) {
-                            weeklyPlan.value = planData;
-                            summaryNote.value = cloudData.note || '';
-                            closeCloudModal();
-                            await showAlert('下載成功！行程已還原。');
-                        } else {
-                            await showAlert('資料格式錯誤');
-                        }
+                        applyPlanData(cloudData);
                     } else {
                         await showAlert('找不到此代碼的資料，請確認輸入是否正確');
                     }
@@ -845,6 +893,52 @@
                     await showAlert('下載失敗，請稍後再試');
                 } finally {
                     cloudModal.loading = false;
+                }
+            };
+
+            // Fetch official templates
+            const fetchTemplates = async () => {
+                if (!db) {
+                    await showAlert('無法連接至資料庫');
+                    return;
+                }
+                cloudModal.loading = true;
+                try {
+                    const q = query(collection(db, "plans"), where("isTemplate", "==", true));
+                    const querySnapshot = await getDocs(q);
+                    templates.value = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                } catch (e) {
+                    console.error(e);
+                    await showAlert('無法讀取模板列表');
+                } finally {
+                    cloudModal.loading = false;
+                }
+            };
+
+            // Select and apply a template
+            const selectTemplate = async (template) => {
+                const confirmed = await showConfirm(`確定要套用模板「${template.templateName || '未命名'}」嗎？\n這將會覆蓋您目前所有的行程安排。`);
+                if (confirmed) {
+                    applyPlanData(template);
+                }
+            };
+
+            // Helper to apply plan data (used by Load and Template)
+            const applyPlanData = async (cloudData) => {
+                // Support legacy cloud data without 'data' field nesting
+                const planData = cloudData.data || cloudData; 
+                
+                // Check if it looks like a plan structure
+                if (planData['週一'] || planData['Monday']) {
+                    weeklyPlan.value = planData;
+                    summaryNote.value = cloudData.note || '';
+                    closeCloudModal();
+                    await showAlert('行程已更新！');
+                } else {
+                    await showAlert('資料格式錯誤');
                 }
             };
 
@@ -897,17 +991,23 @@
                             if (!summary[key]) {
                                 let name = item.unknownName;
                                 let unit = '-';
+                                let packSize = null;
+                                let packageUnit = null;
                                 
                                 const p = products.value.find(p => p.id === item.productId);
                                 if (p) {
                                     name = p.name;
                                     unit = p.unit;
+                                    packSize = p.packSize;
+                                    packageUnit = p.packageUnit;
                                 }
 
                                 summary[key] = {
                                     name: name || '未知商品',
                                     unit: unit,
-                                    totalQuantity: 0
+                                    totalQuantity: 0,
+                                    packSize,
+                                    packageUnit
                                 };
                             }
                             summary[key].totalQuantity += item.quantity;
@@ -1097,12 +1197,15 @@
                     // A. 將數字本身改成深紫色 (使用 Tailwind 的 Purple-900 色碼)
                     badge.style.color = '#581c87'; 
                     
-                    // B. 將裡面的「單位」小字改成純黑色
-                    const unitSpan = badge.querySelector('.text-slate-500');
-                    if (unitSpan) {
-                        unitSpan.style.color = '#000000';
-                    }
+                    // B. 將裡面的「單位」小字改成純黑色 (Including new info text inside badge)
+                    badge.querySelectorAll('span').forEach(span => {
+                         span.style.color = '#000000';
+                    });
                 });
+                
+                // Force new purchase calculation line to be black
+                const purchaseLines = clone.querySelectorAll('.text-sm.font-bold.text-slate-600');
+                purchaseLines.forEach(el => el.style.color = '#000000');
                 
                 // Specific Overrides for the Clone
                 clone.style.backgroundColor = '#ffffff';
@@ -1159,7 +1262,7 @@
                 // Import/Export exports
                 exportData, triggerImport, handleImportFile, clearAllData, fileInput,
                 // Cloud Sync
-                cloudModal, openCloudModal, closeCloudModal, saveToCloud, loadFromCloud,
+                cloudModal, openCloudModal, closeCloudModal, saveToCloud, loadFromCloud, fetchTemplates, templates, selectTemplate,
                 // LINE fix
                 lineModal
             };
