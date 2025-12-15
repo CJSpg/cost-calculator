@@ -216,7 +216,7 @@
         <div class="mt-12 rounded-xl overflow-hidden shadow-xl mb-12 border border-slate-200 dark:border-slate-700 bg-white dark:bg-surface transition-colors duration-300">
             
             <!-- Actual Capture Target (Content) -->
-            <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300 pb-8">
+            <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300 pb-2">
                 <!-- Summary Header -->
                 <div class="px-6 py-4 flex justify-between items-center transition-colors duration-300 bg-primary dark:bg-slate-700">
                     <h3 class="text-xl font-bold text-white flex items-center gap-2">
@@ -232,9 +232,10 @@
                         尚未安排任何行程，請先至上方填寫每日規劃。
                     </div>
                     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
-                            <span class="font-bold text-lg text-slate-800 dark:text-slate-200">{{ item.name }}</span>
-                            <span class="font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300">
+                        <div v-for="(item, key) in weeklySummary" :key="key" class="flex justify-between items-start gap-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                            <!-- Adjusted layout for long names -->
+                            <span class="font-bold text-lg text-slate-800 dark:text-slate-200 flex-1 min-w-0 break-words leading-tight">{{ item.name }}</span>
+                            <span class="flex-shrink-0 font-mono text-xl font-bold px-2 rounded bg-purple-50 text-primary dark:bg-primary/20 dark:text-purple-300 whitespace-nowrap">
                                 {{ item.totalQuantity }} <span class="text-xs text-slate-500 dark:text-slate-400 ml-1">{{ item.unit }}</span>
                             </span>
                         </div>
@@ -264,6 +265,10 @@
                                         <div class="flex items-center gap-2 mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">
                                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                             <span class="font-mono font-bold text-slate-700 dark:text-slate-200">{{ block.time }}</span>
+                                            <!-- Label display in Summary -->
+                                            <span v-if="block.label" class="text-xs bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 ml-auto truncate max-w-[80px]">
+                                                {{ block.label }}
+                                            </span>
                                         </div>
                                         <ul class="space-y-1">
                                             <li v-for="item in block.items" :key="item.productId" class="text-sm flex justify-between">
@@ -281,6 +286,19 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Summary Remark Section -->
+                <div class="px-6 py-4 mt-4">
+                     <label class="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-2">
+                        備註：
+                    </label>
+                    <textarea 
+                        v-model="summaryNote" 
+                        rows="3" 
+                        class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-3 text-sm text-slate-800 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary resize-none placeholder-slate-400"
+                        placeholder="在此輸入注意事項..."
+                    ></textarea>
                 </div>
             </div>
 
@@ -388,8 +406,8 @@
             <div class="bg-white dark:bg-surface w-full h-full sm:h-auto sm:max-h-[80vh] sm:max-w-lg sm:rounded-xl shadow-2xl flex flex-col relative transition-colors duration-300">
                 
                 <!-- Header / Search -->
-                <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-surface sticky top-0 z-10 sm:rounded-t-xl flex gap-3 items-center">
-                    <div class="relative flex-grow">
+                <div class="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-surface sticky top-0 z-10 sm:rounded-t-xl flex gap-3 items-center flex-nowrap">
+                    <div class="relative flex-grow min-w-0">
                         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         <input 
                             ref="pickerSearchInput"
@@ -399,8 +417,9 @@
                             class="w-full pl-10 pr-4 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none"
                         >
                     </div>
-                    <button @click="closePicker" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white p-2">
-                        <span class="text-sm font-bold">取消</span>
+                    <!-- Close button as X icon -->
+                    <button @click="closePicker" class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
 
@@ -512,19 +531,23 @@
     <div class="bg-white dark:bg-surface rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all hover:border-primary/50 dark:hover:border-slate-600">
         <div class="bg-slate-50 dark:bg-slate-700/30 px-6 py-3 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center gap-4">
             
-            <!-- Time Input -->
-            <div class="flex items-center gap-3">
-                <div class="bg-white dark:bg-slate-800 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
+            <!-- Time Input & Label -->
+            <div class="flex items-center gap-2 flex-grow min-w-0">
                 <input 
                     type="time" 
                     v-model="block.time" 
-                    class="bg-transparent text-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 rounded px-1 cursor-pointer"
+                    class="bg-transparent text-xl font-bold text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary rounded px-1 cursor-pointer flex-shrink-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                >
+                <!-- Added Label Input -->
+                <input 
+                    type="text" 
+                    v-model="block.label" 
+                    placeholder="備註..." 
+                    class="bg-transparent text-sm text-slate-600 dark:text-slate-300 focus:outline-none border-b border-transparent focus:border-primary hover:border-slate-300 dark:hover:border-slate-600 transition-colors flex-1 min-w-0"
                 >
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-4 flex-shrink-0">
                 <button 
                     type="button"
                     @click="$emit('delete-block')" 
@@ -645,6 +668,7 @@
             const currentDay = ref('週一');
             const isDark = ref(localStorage.getItem('theme') !== 'light');
             const fileInput = ref(null);
+            const summaryNote = ref('');
 
             // --- THEME LOGIC ---
             const toggleTheme = () => {
@@ -669,12 +693,20 @@
                 if(savedPlan) {
                     weeklyPlan.value = { ...weeklyPlan.value, ...savedPlan };
                 }
+                const savedNote = localStorage.getItem('summary_note');
+                if (savedNote) {
+                    summaryNote.value = savedNote;
+                }
             };
             loadPlan();
 
             watch(weeklyPlan, (newVal) => {
                 localStorage.setItem('weekly_meal_plan', JSON.stringify(newVal));
             }, { deep: true });
+            
+            watch(summaryNote, (newVal) => {
+                localStorage.setItem('summary_note', newVal);
+            });
 
             // --- BROWSER DETECTION (LINE) ---
             const lineModal = reactive({ isOpen: false });
@@ -688,7 +720,11 @@
                     lineModal.isOpen = true;
                     return;
                 }
-                const dataStr = JSON.stringify(weeklyPlan.value, null, 2);
+                const exportObj = {
+                    plan: weeklyPlan.value,
+                    note: summaryNote.value
+                };
+                const dataStr = JSON.stringify(exportObj, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -711,9 +747,14 @@
                 reader.onload = async (e) => {
                     try {
                         const json = JSON.parse(e.target.result);
-                        if (typeof json === 'object' && ('週一' in json || 'Monday' in json)) {
+                        // Backwards compatibility check
+                        if (json.plan) {
+                             weeklyPlan.value = json.plan;
+                             summaryNote.value = json.note || '';
+                             await showAlert('匯入成功！您的行程與備註已更新。');
+                        } else if (typeof json === 'object' && ('週一' in json || 'Monday' in json)) {
                              weeklyPlan.value = json;
-                             await showAlert('匯入成功！您的行程已更新。');
+                             await showAlert('匯入成功！您的行程已更新 (舊格式)。');
                         } else {
                              await showAlert('匯入失敗：檔案格式不正確。');
                         }
@@ -757,8 +798,9 @@
                     // Save to 'plans' collection
                     const docRef = await addDoc(collection(db, "plans"), {
                         data: weeklyPlan.value,
+                        note: summaryNote.value,
                         createdAt: serverTimestamp(),
-                        version: 1
+                        version: 2
                     });
                     cloudModal.savedId = docRef.id;
                 } catch (e) {
@@ -782,9 +824,14 @@
                     const docSnap = await getDoc(docRef);
 
                     if (docSnap.exists()) {
-                        const cloudData = docSnap.data().data;
-                        if (cloudData) {
-                            weeklyPlan.value = cloudData;
+                        const cloudData = docSnap.data();
+                        // Support legacy cloud data without 'data' field nesting
+                        const planData = cloudData.data || cloudData; 
+                        
+                        // Check if it looks like a plan structure
+                        if (planData['週一'] || planData['Monday']) {
+                            weeklyPlan.value = planData;
+                            summaryNote.value = cloudData.note || '';
                             closeCloudModal();
                             await showAlert('下載成功！行程已還原。');
                         } else {
@@ -807,7 +854,9 @@
                     weeklyPlan.value = {
                         '週一': [], '週二': [], '週三': [], '週四': [], '週五': [], '週六': [], '週日': []
                     };
+                    summaryNote.value = '';
                     localStorage.removeItem('weekly_meal_plan');
+                    localStorage.removeItem('summary_note');
                 }
             };
 
@@ -953,6 +1002,7 @@
                 weeklyPlan.value[currentDay.value].push({
                     id: Date.now() + Math.random(),
                     time: timeStr,
+                    label: '',
                     items: []
                 });
             };
@@ -982,24 +1032,123 @@
                     lineModal.isOpen = true;
                     return;
                 }
-                const element = document.getElementById('capture-area');
-                const bgColor = isDark.value ? '#1E293B' : '#FFFFFF'; // Explicit background color
                 
-                html2canvas(element, { 
-                    scale: 2,
-                    backgroundColor: bgColor,
-                    useCORS: true
+                // 1. Clone the capture area
+                const originalElement = document.getElementById('capture-area');
+                const clone = originalElement.cloneNode(true);
+                
+                // 2. Prepare a container for the clone (off-screen, fixed width for consistency)
+                const container = document.createElement('div');
+                container.style.position = 'fixed';
+                container.style.top = '-10000px';
+                container.style.left = '-10000px';
+                container.style.width = '800px'; // Fixed A4-like width
+                container.style.zIndex = '-1000';
+                
+                // 3. Force "Light Mode" and Clean Styles on the Clone
+                // We recursively remove dark mode classes to ensure white background
+                const removeDarkClasses = (el) => {
+                    if (el.classList) {
+                        el.classList.remove('dark');
+                        // Replace bg-surface or dark bg colors with white/slate-50
+                        if (el.classList.contains('dark:bg-surface')) el.classList.remove('dark:bg-surface');
+                        if (el.classList.contains('bg-surface')) {
+                             el.classList.remove('bg-surface');
+                             el.classList.add('bg-white');
+                        }
+                        // Ensure text is black/slate-800
+                        if (el.classList.contains('dark:text-white')) el.classList.remove('dark:text-white');
+                        if (el.classList.contains('text-white') && !el.parentElement.classList.contains('bg-primary')) {
+                             // Keep text-white only on primary headers
+                             el.classList.remove('text-white');
+                             el.classList.add('text-slate-900');
+                        }
+                    }
+                    Array.from(el.children).forEach(removeDarkClasses);
+                };
+                removeDarkClasses(clone);
+
+                // 行程卡片 (特徵是 bg-slate-50)，強制背景變更淺，文字變全黑
+                const cards = clone.querySelectorAll('.bg-slate-50');
+                cards.forEach(card => {
+                    // 背景設定：改為幾乎純白，並加上稍微深一點的邊框讓它清楚
+                    card.style.backgroundColor = '#ffffff'; 
+                    card.style.border = '1px solid #d1d5db'; // 灰色邊框
+                    
+                    // 文字設定：強制卡片內所有文字變成純黑色
+                    card.style.color = '#000000';
+                    card.querySelectorAll('*').forEach(child => {
+                        // 覆蓋原本 slate-600 / slate-500 的灰色文字
+                        child.style.color = '#000000';
+                    });
+                });
+
+                // 總清單的商品名稱 (特徵是 text-slate-800)，強制改為純黑
+                // 這裡我們針對 #capture-area 裡面的特定文字 class 進行加強
+                const summaryTexts = clone.querySelectorAll('#capture-area .text-slate-800');
+                summaryTexts.forEach(text => {
+                    text.style.color = '#000000'; // 純黑
+                    text.style.fontWeight = '800'; // 加粗，讓列印時更清楚
+                });
+
+                // 找出那個淺紫色的數字外框 (特徵是 bg-purple-50 且 text-primary)
+                const numberBadges = clone.querySelectorAll('.bg-purple-50.text-primary');
+                numberBadges.forEach(badge => {
+                    // A. 將數字本身改成深紫色 (使用 Tailwind 的 Purple-900 色碼)
+                    badge.style.color = '#581c87'; 
+                    
+                    // B. 將裡面的「單位」小字改成純黑色
+                    const unitSpan = badge.querySelector('.text-slate-500');
+                    if (unitSpan) {
+                        unitSpan.style.color = '#000000';
+                    }
+                });
+                
+                // Specific Overrides for the Clone
+                clone.style.backgroundColor = '#ffffff';
+                clone.style.color = '#000000';
+                clone.style.borderRadius = '0';
+                clone.style.boxShadow = 'none';
+                clone.style.padding = '20px';
+                
+                // FIX: Manual Textarea Handling for Note (Value not cloned) & Styling
+                const originalTextarea = originalElement.querySelector('textarea');
+                const clonedTextarea = clone.querySelector('textarea');
+                
+                if (originalTextarea && clonedTextarea) {
+                    const textDiv = document.createElement('div');
+                    textDiv.innerText = originalTextarea.value;
+                    // Dark background for note, white text
+                    textDiv.style.cssText = "width: 100%; min-height: 80px; padding: 12px; border: 1px solid #475569; border-radius: 8px; background-color: #1e293b; color: white; white-space: pre-wrap; font-size: 14px;";
+                    clonedTextarea.parentNode.replaceChild(textDiv, clonedTextarea);
+                }
+                
+                container.appendChild(clone);
+                document.body.appendChild(container);
+
+                // 4. Capture using html2canvas on the clean clone
+                html2canvas(clone, { 
+                    scale: 2, // High resolution
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    windowWidth: 800
                 }).then(canvas => {
                     const link = document.createElement('a');
-                    link.download = 'weekly-shopping-list.png';
+                    link.download = `本週飲食計畫表-${new Date().toISOString().slice(0,10)}.png`;
                     link.href = canvas.toDataURL();
                     link.click();
+                    
+                    // Cleanup
+                    document.body.removeChild(container);
+                }).catch(err => {
+                    console.error("Capture failed", err);
+                    document.body.removeChild(container);
                 });
             };
 
             return {
                 currentDay, weekDays, weeklyPlan, sortedCurrentDayLog, products,
-                modalState, copyModal, weeklySummary, isDark, toggleTheme,
+                modalState, copyModal, weeklySummary, isDark, toggleTheme, summaryNote,
                 addTimeBlock, removeTimeBlock, addItemToBlock, removeItemFromBlock,
                 openCopyModal, closeCopyModal, submitCopy,
                 closeModal, downloadImage,

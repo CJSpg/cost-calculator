@@ -130,7 +130,7 @@
                             <th class="px-6 py-4 text-center">價格</th>
                             <th class="px-6 py-4 text-center">數量</th>
                             <th class="px-6 py-4 text-center">單位</th>
-                            <th class="px-6 py-4 text-right">換算單價</th>
+                            <th class="px-6 py-4 text-right">單價</th>
                             <th class="px-6 py-4 text-center">操作</th>
                         </tr>
                     </thead>
@@ -228,22 +228,22 @@
                     <!-- EDIT MODE (Mobile) -->
                     <template v-else>
                         <div class="mb-3">
-                            <label class="text-[10px] uppercase font-bold text-primary mb-1 block">編輯名稱</label>
+                            <label class="text-[10px] uppercase font-bold text-primary mb-1 block">名稱</label>
                             <input v-model="editForm.name" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-slate-800 dark:text-white outline-none">
                         </div>
                         
                         <div class="grid grid-cols-3 gap-3 mb-4">
                             <div>
-                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">單位</label>
-                                <input v-model="editForm.unit" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
+                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">價格</label>
+                                <input type="number" v-model.number="editForm.packPrice" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
                             </div>
                             <div>
                                 <label class="text-[10px] uppercase font-bold text-primary mb-1 block">數量</label>
                                 <input type="number" v-model.number="editForm.packSize" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
                             </div>
                             <div>
-                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">價格</label>
-                                <input type="number" v-model.number="editForm.packPrice" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
+                                <label class="text-[10px] uppercase font-bold text-primary mb-1 block">單位</label>
+                                <input v-model="editForm.unit" class="w-full bg-white dark:bg-slate-800 border border-primary rounded px-2 py-2 text-center text-slate-800 dark:text-white outline-none">
                             </div>
                         </div>
 
