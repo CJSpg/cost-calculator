@@ -165,7 +165,7 @@
                     </div>
                 </div>
 
-                <!-- Product Table -->
+                <!-- Product Table (Desktop) -->
                 <div class="hidden md:block overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 uppercase font-medium">
@@ -235,12 +235,33 @@
                             </div>
                         </template>
                         <template v-else>
-                             <!-- Mobile Edit Mode (Simplified for brevity) -->
-                             <div class="space-y-2">
-                                <input v-model="editForm.name" class="w-full border p-2 rounded dark:bg-slate-800 dark:border-slate-600">
-                                <div class="flex gap-2">
-                                    <button @click="cancelEdit" class="flex-1 bg-slate-200 dark:bg-slate-700 py-2 rounded">取消</button>
-                                    <button @click="saveEdit" class="flex-1 bg-primary text-white py-2 rounded">儲存</button>
+                             <!-- Mobile Edit Mode (Full Fields) -->
+                             <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">名稱</label>
+                                    <input v-model="editForm.name" class="w-full bg-white dark:bg-dark border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">採購單位</label>
+                                        <input v-model="editForm.packageUnit" class="w-full bg-white dark:bg-dark border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">價格</label>
+                                        <input type="number" v-model.number="editForm.packPrice" class="w-full bg-white dark:bg-dark border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">容量</label>
+                                        <input type="number" v-model.number="editForm.packSize" class="w-full bg-white dark:bg-dark border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">消耗單位</label>
+                                        <input v-model="editForm.unit" class="w-full bg-white dark:bg-dark border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-primary">
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mt-2">
+                                    <button @click="cancelEdit" class="flex-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-lg font-bold text-sm">取消</button>
+                                    <button @click="saveEdit" class="flex-1 bg-primary text-white py-2.5 rounded-lg font-bold text-sm">儲存</button>
                                 </div>
                              </div>
                         </template>
@@ -260,7 +281,8 @@
                     </button>
                 </div>
 
-                <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
                     <table class="w-full text-left text-sm min-w-[800px]">
                         <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-300 uppercase font-medium">
                             <tr>
@@ -310,6 +332,50 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Card View (No Horizontal Scroll) -->
+                <div class="md:hidden space-y-4">
+                    <div v-if="plans.length === 0" class="text-center py-8 text-slate-500">
+                        <span v-if="plansLoading">載入中...</span>
+                        <span v-else>沒有任何計畫資料</span>
+                    </div>
+                    <div v-for="plan in plans" :key="plan.id" class="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm" :class="{'ring-1 ring-primary/30 bg-purple-50/50 dark:bg-purple-900/10': plan.isTemplate}">
+                        <!-- Card Header -->
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">#{{ plan.id.substring(0,6) }}</div>
+                                <div class="text-[10px] text-slate-500">{{ formatDate(plan.createdAt) }}</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button @click="viewPlan(plan)" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-xs font-bold">查看</button>
+                                <button @click="deletePlan(plan.id)" class="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs font-bold">刪除</button>
+                            </div>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="text-sm text-slate-600 dark:text-slate-400 mb-4 bg-white dark:bg-slate-800 p-2 rounded border border-slate-100 dark:border-slate-700/50 italic">
+                            {{ plan.note || '(無備註)' }}
+                        </div>
+
+                        <!-- Template Control Block -->
+                        <div class="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700/50 flex items-center gap-3">
+                            <label class="inline-flex items-center cursor-pointer flex-shrink-0">
+                                <input type="checkbox" class="sr-only peer" :checked="plan.isTemplate" @change="toggleTemplate(plan)">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary relative"></div>
+                            </label>
+                            
+                            <input 
+                                type="text" 
+                                v-model="plan.templateName" 
+                                @blur="updateTemplateName(plan)"
+                                :disabled="!plan.isTemplate"
+                                placeholder="設定為模板名稱..."
+                                class="w-full bg-transparent text-sm border-b border-transparent focus:border-primary focus:outline-none py-1 text-slate-800 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors placeholder-slate-400"
+                                :class="{'border-slate-300 dark:border-slate-600': plan.isTemplate}"
+                            >
+                        </div>
+                    </div>
                 </div>
             </div>
 
