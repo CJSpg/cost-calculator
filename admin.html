@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品管理後台 - WeeklyPlan</title>
+
+    <!-- LINE Auto Redirect Script -->
+    <script>
+        (function() {
+            if (/Line/i.test(navigator.userAgent)) {
+                // 如果網址沒有 openExternalBrowser 參數，則加上並重整，嘗試觸發 LINE 外部開啟機制
+                if (location.search.indexOf('openExternalBrowser=1') === -1) {
+                    var url = new URL(location.href);
+                    url.searchParams.append('openExternalBrowser', '1');
+                    window.location.replace(url.href);
+                }
+            }
+        })();
+    </script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
