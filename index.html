@@ -232,7 +232,10 @@
             <!-- Actual Capture Target (Content) -->
             <div id="capture-area" class="bg-white dark:bg-surface transition-colors duration-300 pb-2">
                 <!-- Summary Header -->
-                <div class="px-6 py-4 flex justify-between items-center transition-colors duration-300 bg-primary dark:bg-slate-700">
+                <div 
+                    @click="handleSecretClick"
+                    class="px-6 py-4 flex justify-between items-center transition-colors duration-300 bg-primary dark:bg-slate-700 select-none"
+                >
                     <h3 class="text-xl font-bold text-white flex items-center gap-2">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                         總清單
@@ -332,8 +335,16 @@
             </div>
 
             <!-- Controls (Outside capture area) -->
-            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 no-print">
-                <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-slate-500 transition-colors flex items-center gap-2 text-sm">
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center no-print gap-4">
+                
+                <!-- Secret Cost Display -->
+                <div class="flex-1">
+                    <div v-if="showCost" class="text-slate-600 dark:text-slate-300 font-bold text-sm sm:text-base transition-all">
+                        預估總金額：<span class="text-primary font-mono text-xl ml-1">${{ totalEstimatedCost.toLocaleString() }}</span>
+                    </div>
+                </div>
+
+                <button @click="downloadImage" type="button" class="px-4 py-2 bg-slate-800 dark:bg-slate-600 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-slate-500 transition-colors flex items-center gap-2 text-sm whitespace-nowrap">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     下載圖片
                 </button>
@@ -739,6 +750,11 @@
             const fileInput = ref(null);
             const summaryNote = ref('');
 
+            // Cost Calculation Secret State
+            const showCost = ref(false);
+            const secretClickCount = ref(0);
+            let secretClickTimer = null;
+
             // --- THEME LOGIC ---
             const toggleTheme = () => {
                 isDark.value = !isDark.value;
@@ -1007,6 +1023,7 @@
                                 let unit = '-';
                                 let packSize = null;
                                 let packageUnit = null;
+                                let packPrice = 0;
                                 
                                 const p = products.value.find(p => p.id === item.productId);
                                 if (p) {
@@ -1014,6 +1031,7 @@
                                     unit = p.unit;
                                     packSize = p.packSize;
                                     packageUnit = p.packageUnit;
+                                    packPrice = p.packPrice || 0;
                                 }
 
                                 summary[key] = {
@@ -1021,7 +1039,8 @@
                                     unit: unit,
                                     totalQuantity: 0,
                                     packSize,
-                                    packageUnit
+                                    packageUnit,
+                                    packPrice
                                 };
                             }
                             summary[key].totalQuantity += item.quantity;
@@ -1030,6 +1049,32 @@
                 });
                 return summary;
             });
+
+            // --- COST CALCULATION ---
+            const totalEstimatedCost = computed(() => {
+                let total = 0;
+                Object.values(weeklySummary.value).forEach(item => {
+                    if (item.packSize && item.packPrice) {
+                        const purchaseQty = Math.ceil(item.totalQuantity / item.packSize);
+                        total += purchaseQty * item.packPrice;
+                    }
+                });
+                return total;
+            });
+
+            const handleSecretClick = () => {
+                secretClickCount.value++;
+                if (secretClickTimer) clearTimeout(secretClickTimer);
+                
+                if (secretClickCount.value >= 5) {
+                    showCost.value = !showCost.value;
+                    secretClickCount.value = 0;
+                } else {
+                    secretClickTimer = setTimeout(() => {
+                        secretClickCount.value = 0;
+                    }, 500); // Reset if clicks aren't fast enough
+                }
+            };
 
             // --- MODAL LOGIC ---
             const modalState = reactive({ isOpen: false, type: 'alert', message: '', resolve: null });
@@ -1283,7 +1328,9 @@
                 // Cloud Sync
                 cloudModal, openCloudModal, closeCloudModal, saveToCloud, loadFromCloud, fetchTemplates, templates, selectTemplate,
                 // LINE fix
-                lineModal
+                lineModal,
+                // Cost exports
+                showCost, totalEstimatedCost, handleSecretClick
             };
         }
     });
