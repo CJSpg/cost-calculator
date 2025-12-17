@@ -580,7 +580,11 @@
 
             const viewPlan = (plan) => {
                 const { data, note } = plan;
-                viewPlanModal.content = JSON.stringify({ note, plan: data }, null, 2);
+                try {
+                    viewPlanModal.content = JSON.stringify({ note, plan: data }, null, 2);
+                } catch (e) {
+                    viewPlanModal.content = "無法顯示：資料結構錯誤 (含有循環參照)";
+                }
                 viewPlanModal.isOpen = true;
             };
 
