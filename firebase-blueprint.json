@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Product item containing pricing, pack size, units",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "packPrice": { "type": "number" },
+        "packSize": { "type": "number" },
+        "packageUnit": { "type": "string" },
+        "unit": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["name", "packPrice", "packSize", "packageUnit", "unit"]
+    },
+    "DayTypeTemplate": {
+      "title": "DayTypeTemplate",
+      "description": "Template configuration for specific diet days",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "meals": { "type": "array" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["name", "meals"]
+    },
+    "MealPlan": {
+      "title": "MealPlan",
+      "description": "45-day diet plan metadata",
+      "type": "object",
+      "properties": {
+        "planCode": { "type": "string" },
+        "customerName": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["planCode", "customerName", "startDate", "endDate", "status"]
+    },
+    "MealPlanDay": {
+      "title": "MealPlanDay",
+      "description": "Diet and meal details for a single day of a meal plan",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "dayIndex": { "type": "number" },
+        "dayType": { "type": "string" },
+        "dayTypeName": { "type": "string" },
+        "meals": { "type": "array" }
+      },
+      "required": ["date", "dayIndex", "dayType", "dayTypeName", "meals"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Admin/Staff/Viewer user account details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["uid", "email", "displayName", "role", "enabled"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Products list with packaging, units and pricing"
+    },
+    "/dayTypeTemplates/{templateId}": {
+      "schema": "DayTypeTemplate",
+      "description": "Day meal templates for automatic diet planning"
+    },
+    "/mealPlans/{planCode}": {
+      "schema": "MealPlan",
+      "description": "Top-level metadata of a 45-day meal plan"
+    },
+    "/mealPlans/{planCode}/days/{dayId}": {
+      "schema": "MealPlanDay",
+      "description": "Specific daily meals schedule under a meal plan"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Users registry with administrative roles"
+    }
+  }
+}
