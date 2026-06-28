@@ -356,7 +356,7 @@ export const AdminTemplates: React.FC = () => {
                       e.target.value = ''; // Reset select after copy trigger
                     }}
                     defaultValue=""
-                    className="h-8.5 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-xs focus:outline-none cursor-pointer hover:border-teal-350 transition-colors"
+                    className="h-8.5 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-xs focus:outline-none cursor-pointer hover:border-teal-300 transition-colors"
                   >
                     <option value="" disabled>快速複製自...</option>
                     {templates

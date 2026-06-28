@@ -109,7 +109,7 @@ export const DayDetail: React.FC = () => {
     const mealToCopy = dayPlan.meals[mealIndex];
     const duplicatedMeal: MealPlanMeal = {
       time: mealToCopy.time,
-      title: `${mealToCopy.title} (複製)`,
+      title: `${mealToCopy.title}`,
       note: mealToCopy.note,
       items: mealToCopy.items.map(item => ({ ...item }))
     };
