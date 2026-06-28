@@ -343,38 +343,41 @@ export const PlanTemplates: React.FC = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/plan/${plan.planCode}`)}
-            className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shrink-0"
-            title="返回菜單"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-extrabold text-slate-950 font-display truncate">
-                {plan.customerName} 菜單模板
-              </h1>
-              <p className="text-xs text-slate-400 mt-0.5">此菜單專用</p>
+      {/* Sticky Header Wrapper */}
+      <div className="sticky top-16 z-20 bg-slate-50 -mt-4 sm:-mt-6 lg:-mt-8 pt-4 sm:pt-6 lg:pt-8 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/plan/${plan.planCode}`)}
+              className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors shrink-0"
+              title="返回菜單"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-extrabold text-slate-950 font-display truncate">
+                  {plan.customerName} 菜單模板
+                </h1>
+                <p className="text-xs text-slate-400 mt-0.5">此菜單專用</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {isStaff && (
-          <button
-            onClick={handleSaveTemplate}
-            disabled={saving}
-            className="w-full md:w-auto h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? '正在儲存...' : '儲存變更'}
-          </button>
-        )}
+          {isStaff && (
+            <button
+              onClick={handleSaveTemplate}
+              disabled={saving}
+              className="w-full md:w-auto h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? '正在儲存...' : '儲存變更'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 bg-slate-100 p-1 rounded-2xl">

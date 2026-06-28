@@ -266,59 +266,62 @@ export const DayDetail: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-8 py-4 animate-fadeIn relative">
       
-      {/* 1. Header Banner */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/plan/${planCode}`)}
-            className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="text-xs font-mono font-bold text-slate-400">DAY {dayPlan.dayIndex} • {dayPlan.date}</div>
-            <h1 className="text-xl font-extrabold text-slate-950 font-display flex items-center gap-1.5 mt-0.5">
-              餐次配方客製化
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
-                dayPlan.dayType === 'PREPARATION' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                dayPlan.dayType === 'PROTEIN' ? 'bg-teal-100 text-teal-800 border-teal-200' :
-                dayPlan.dayType === 'SLIMMING' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
-                'bg-amber-100 text-amber-800 border-amber-200'
-              }`}>
-                {dayPlan.dayTypeName}
-              </span>
-            </h1>
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-2.5 w-full sm:w-auto">
-          {isStaff ? (
-            <>
-              <button
-                onClick={() => navigate(`/plan/${planCode}`)}
-                className="flex-1 sm:flex-initial h-11 px-4.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-colors"
-              >
-                取消修改
-              </button>
-              
-              <button
-                onClick={handleSaveChanges}
-                disabled={saving}
-                className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? '正在儲存...' : '儲存變更'}
-              </button>
-            </>
-          ) : (
+      {/* Sticky Header Wrapper */}
+      <div className="sticky top-16 z-20 bg-slate-50 -mt-4 sm:-mt-6 lg:-mt-8 pt-4 sm:pt-6 lg:pt-8 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        {/* 1. Header Banner */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(`/plan/${planCode}`)}
-              className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
+              className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors"
             >
-              返回計畫月曆
+              <ArrowLeft className="w-5 h-5" />
             </button>
-          )}
+            <div>
+              <div className="text-xs font-mono font-bold text-slate-400">DAY {dayPlan.dayIndex} • {dayPlan.date}</div>
+              <h1 className="text-xl font-extrabold text-slate-950 font-display flex items-center gap-1.5 mt-0.5">
+                餐次配方客製化
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
+                  dayPlan.dayType === 'PREPARATION' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                  dayPlan.dayType === 'PROTEIN' ? 'bg-teal-100 text-teal-800 border-teal-200' :
+                  dayPlan.dayType === 'SLIMMING' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                  'bg-amber-100 text-amber-800 border-amber-200'
+                }`}>
+                  {dayPlan.dayTypeName}
+                </span>
+              </h1>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2.5 w-full sm:w-auto">
+            {isStaff ? (
+              <>
+                <button
+                  onClick={() => navigate(`/plan/${planCode}`)}
+                  className="flex-1 sm:flex-initial h-11 px-4.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-colors"
+                >
+                  取消修改
+                </button>
+                
+                <button
+                  onClick={handleSaveChanges}
+                  disabled={saving}
+                  className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? '正在儲存...' : '儲存變更'}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate(`/plan/${planCode}`)}
+                className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
+              >
+                返回計畫月曆
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

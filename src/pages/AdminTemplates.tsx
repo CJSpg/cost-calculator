@@ -288,29 +288,32 @@ export const AdminTemplates: React.FC = () => {
   return (
     <div className="space-y-8 animate-fadeIn">
 
-      {/* 1. Header with Switch tabs */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-            <BookOpen className="w-5.5 h-5.5" />
+      {/* Sticky Header Wrapper */}
+      <div className="sticky top-16 z-20 bg-slate-50 -mt-4 sm:-mt-6 lg:-mt-8 pt-4 sm:pt-6 lg:pt-8 pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        {/* 1. Header with Switch tabs */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <BookOpen className="w-5.5 h-5.5" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-950 font-display">標準日型母版設定</h1>
+              <p className="text-xs text-slate-400 mt-0.5">自定義準備、蛋白、纖體、代謝四大核心模板餐次。此處的修改是為「新菜單開立」的標準母本。</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-slate-950 font-display">標準日型母版設定</h1>
-            <p className="text-xs text-slate-400 mt-0.5">自定義準備、蛋白、纖體、代謝四大核心模板餐次。此處的修改是為「新菜單開立」的標準母本。</p>
-          </div>
-        </div>
 
-        {/* Save button */}
-        {isStaff && activeTemplate && (
-          <button
-            onClick={handleSaveTemplate}
-            disabled={saving}
-            className="w-full md:w-auto h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? '儲存中...' : `儲存「${activeTemplate.name}」母版`}
-          </button>
-        )}
+          {/* Save button */}
+          {isStaff && activeTemplate && (
+            <button
+              onClick={handleSaveTemplate}
+              disabled={saving}
+              className="w-full md:w-auto h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? '儲存中...' : `儲存「${activeTemplate.name}」母版`}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. Horizontal Switch DayType Selector */}
