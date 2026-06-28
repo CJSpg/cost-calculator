@@ -24,7 +24,8 @@ import {
   X,
   PlusSquare,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Copy
 } from 'lucide-react';
 import { EditableQuantity, MealPlan, MealPlanDay, MealPlanMeal, MealPlanMealItem, Product } from '../types';
 import { normalizePositiveQuantity, numberInputValue, parseEditableNumber } from '../utils/numberInput';
@@ -102,6 +103,24 @@ export const DayDetail: React.FC = () => {
     });
   };
 
+  // Duplicate a meal in day plan
+  const handleCopyMeal = (mealIndex: number) => {
+    if (!dayPlan) return;
+    const mealToCopy = dayPlan.meals[mealIndex];
+    const duplicatedMeal: MealPlanMeal = {
+      time: mealToCopy.time,
+      title: `${mealToCopy.title} (複製)`,
+      note: mealToCopy.note,
+      items: mealToCopy.items.map(item => ({ ...item }))
+    };
+    const updatedMeals = [...dayPlan.meals];
+    updatedMeals.splice(mealIndex + 1, 0, duplicatedMeal);
+    setDayPlan({
+      ...dayPlan,
+      meals: updatedMeals
+    });
+  };
+
   // Delete a meal
   const handleDeleteMeal = (mealIndex: number) => {
     if (!dayPlan) return;
@@ -122,32 +141,27 @@ export const DayDetail: React.FC = () => {
     setSearchTerm('');
   };
 
-  // Add selected product to the active meal
+  // Add selected product to the active meal (toggles)
   const handleSelectProduct = (product: Product) => {
     if (!dayPlan || activeMealIndex === null) return;
 
     const updatedMeals = [...dayPlan.meals];
     const targetMeal = updatedMeals[activeMealIndex];
+    const itemIndex = targetMeal.items.findIndex(item => item.productId === product.id);
 
-    // Check if product is already in the meal
-    const exists = targetMeal.items.some(item => item.productId === product.id);
-    if (exists) {
-      alert('此品項已存在於該餐次中，您可以直接調整份量！');
-      return;
+    if (itemIndex > -1) {
+      targetMeal.items.splice(itemIndex, 1);
+    } else {
+      const newItem: MealPlanMealItem = {
+        productId: product.id,
+        productName: product.name,
+        quantity: 1,
+        unit: product.unit,
+        note: ''
+      };
+      targetMeal.items.push(newItem);
     }
-
-    const newItem: MealPlanMealItem = {
-      productId: product.id,
-      productName: product.name,
-      quantity: 1,
-      unit: product.unit,
-      note: ''
-    };
-
-    targetMeal.items.push(newItem);
     setDayPlan({ ...dayPlan, meals: updatedMeals });
-    setShowProductSelector(false);
-    setActiveMealIndex(null);
   };
 
   // Update item quantity
@@ -376,16 +390,26 @@ export const DayDetail: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Delete Meal */}
+                    {/* Duplicate & Delete Meal */}
                     {isStaff && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteMeal(mIdx)}
-                        className="mt-5 h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                        title="刪除此餐次"
-                      >
-                        <Trash2 className="w-4.5 h-4.5" />
-                      </button>
+                      <div className="flex gap-1 mt-5">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMeal(mIdx)}
+                          className="h-10 w-10 rounded-lg hover:bg-teal-50 text-slate-400 hover:text-teal-600 border border-transparent hover:border-teal-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                          title="複製此餐次"
+                        >
+                          <Copy className="w-4.5 h-4.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMeal(mIdx)}
+                          className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                          title="刪除此餐次"
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
 
@@ -589,23 +613,52 @@ export const DayDetail: React.FC = () => {
                   找不到符合的產品
                 </div>
               ) : (
-                filteredProducts.map(prod => (
-                  <button
-                    key={prod.id}
-                    onClick={() => handleSelectProduct(prod)}
-                    className="w-full p-3 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 text-left rounded-xl border border-slate-200/60 flex justify-between items-center transition-all group"
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-slate-800 group-hover:text-teal-600">{prod.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">包裝規格：每{prod.packageUnit || '瓶'}裝有 {prod.packSize} {prod.unit}</div>
-                    </div>
+                filteredProducts.map(prod => {
+                  const isAdded = dayPlan.meals[activeMealIndex].items.some(
+                    item => item.productId === prod.id
+                  );
+                  return (
+                    <button
+                      key={prod.id}
+                      onClick={() => handleSelectProduct(prod)}
+                      className={`w-full p-3 text-left rounded-xl border flex justify-between items-center transition-all group ${
+                        isAdded
+                          ? 'bg-teal-50/50 border-teal-200 hover:bg-teal-50'
+                          : 'bg-slate-50 border-slate-200/60 hover:bg-teal-50 hover:border-teal-200'
+                      }`}
+                    >
+                      <div>
+                        <div className={`font-bold text-xs ${isAdded ? 'text-teal-700' : 'text-slate-800 group-hover:text-teal-600'}`}>{prod.name}</div>
+                        <div className="text-[10px] text-slate-400 mt-1">包裝規格：每{prod.packageUnit || '瓶'}裝有 {prod.packSize} {prod.unit}</div>
+                      </div>
 
-                    <div className="px-2.5 py-1 rounded bg-white text-teal-600 border border-slate-200 font-bold text-[10px] uppercase shrink-0">
-                      選擇
-                    </div>
-                  </button>
-                ))
+                      {isAdded ? (
+                        <div className="px-2 py-1 rounded bg-teal-500 text-white font-bold text-[10px] flex items-center gap-0.5 shrink-0 shadow-sm shadow-teal-50">
+                          <Check className="w-3 h-3" />
+                          已選
+                        </div>
+                      ) : (
+                        <div className="px-2.5 py-1 rounded bg-white text-slate-500 border border-slate-200 font-bold text-[10px] uppercase shrink-0">
+                          選擇
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
               )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowProductSelector(false);
+                  setActiveMealIndex(null);
+                }}
+                className="w-full h-10 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs transition-colors shadow-md shadow-teal-50 flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                完成關閉
+              </button>
             </div>
 
             <div className="text-[10px] text-slate-400 text-center">

@@ -4,22 +4,23 @@ import { useAuth } from '../context/AuthContext';
 import { getTemplates, saveTemplate, getProducts } from '../firebase/db';
 import { DayType, DayTypeMeal, DayTypeTemplate, EditableQuantity, MealPlanMeal, MealPlanMealItem, Product } from '../types';
 import { normalizePositiveQuantity, numberInputValue, parseEditableNumber } from '../utils/numberInput';
-import { 
-  BookOpen, 
-  Save, 
-  Plus, 
-  Trash2, 
-  Package, 
-  Clock, 
-  Sparkles, 
-  Check, 
-  ChevronDown, 
-  PlusSquare, 
-  Search, 
+import {
+  BookOpen,
+  Save,
+  Plus,
+  Trash2,
+  Package,
+  Clock,
+  Sparkles,
+  Check,
+  ChevronDown,
+  PlusSquare,
+  Search,
   X,
   PlusCircle,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Copy
 } from 'lucide-react';
 
 export const AdminTemplates: React.FC = () => {
@@ -29,7 +30,7 @@ export const AdminTemplates: React.FC = () => {
   const [templates, setTemplates] = useState<DayTypeTemplate[]>([]);
   const [activeType, setActiveType] = useState<DayType>('PREPARATION');
   const [activeTemplate, setActiveTemplate] = useState<DayTypeTemplate | null>(null);
-  
+
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,6 +108,25 @@ export const AdminTemplates: React.FC = () => {
     });
   };
 
+  // Duplicate a meal in template
+  const handleCopyMeal = (mealIndex: number) => {
+    if (!activeTemplate) return;
+    const mealToCopy = activeTemplate.meals[mealIndex];
+    const duplicatedMeal: DayTypeMeal = {
+      id: `${activeType.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      time: mealToCopy.time,
+      title: `${mealToCopy.title}`,
+      note: mealToCopy.note,
+      items: mealToCopy.items.map(item => ({ ...item }))
+    };
+    const updatedMeals = [...activeTemplate.meals];
+    updatedMeals.splice(mealIndex + 1, 0, duplicatedMeal);
+    setActiveTemplate({
+      ...activeTemplate,
+      meals: updatedMeals
+    });
+  };
+
   // Delete meal from template
   const handleDeleteMeal = (mealIndex: number) => {
     if (!activeTemplate) return;
@@ -132,25 +152,21 @@ export const AdminTemplates: React.FC = () => {
 
     const updatedMeals = [...activeTemplate.meals];
     const targetMeal = updatedMeals[activeMealIndex];
+    const itemIndex = targetMeal.items.findIndex(item => item.productId === product.id);
 
-    const exists = targetMeal.items.some(item => item.productId === product.id);
-    if (exists) {
-      alert('產品已添加過，可直接修改計量份量！');
-      return;
+    if (itemIndex > -1) {
+      targetMeal.items.splice(itemIndex, 1);
+    } else {
+      const newItem: MealPlanMealItem = {
+        productId: product.id,
+        productName: product.name,
+        quantity: 1,
+        unit: product.unit,
+        note: ''
+      };
+      targetMeal.items.push(newItem);
     }
-
-    const newItem: MealPlanMealItem = {
-      productId: product.id,
-      productName: product.name,
-      quantity: 1,
-      unit: product.unit,
-      note: ''
-    };
-
-    targetMeal.items.push(newItem);
     setActiveTemplate({ ...activeTemplate, meals: updatedMeals });
-    setShowProductSelector(false);
-    setActiveMealIndex(null);
   };
 
   const handleItemQtyChange = (mealIndex: number, itemIndex: number, qty: EditableQuantity) => {
@@ -235,7 +251,7 @@ export const AdminTemplates: React.FC = () => {
     }
   };
 
-  const filteredProducts = allProducts.filter(p => 
+  const filteredProducts = allProducts.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -250,7 +266,7 @@ export const AdminTemplates: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      
+
       {/* 1. Header with Switch tabs */}
       <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-2.5">
@@ -291,9 +307,8 @@ export const AdminTemplates: React.FC = () => {
                 setActiveType(item.type);
               }
             }}
-            className={`py-3 rounded-xl text-xs font-bold transition-all text-center ${
-              activeType === item.type ? item.activeClass : 'text-slate-500 ' + item.colorClass
-            }`}
+            className={`py-3 rounded-xl text-xs font-bold transition-all text-center ${activeType === item.type ? item.activeClass : 'text-slate-500 ' + item.colorClass
+              }`}
           >
             {item.name}
           </button>
@@ -303,7 +318,7 @@ export const AdminTemplates: React.FC = () => {
       {/* 3. Description & Detailed Editor Card */}
       {activeTemplate && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Main Meals (8 cols) */}
           <div className="lg:col-span-8 space-y-6">
             <div className="flex justify-between items-center">
@@ -311,7 +326,7 @@ export const AdminTemplates: React.FC = () => {
                 <Clock className="w-4.5 h-4.5 text-teal-500" />
                 標準配餐餐次 ({activeTemplate.meals.length} 餐次)
               </h3>
-              
+
               {isStaff && (
                 <button
                   onClick={handleAddMeal}
@@ -331,7 +346,7 @@ export const AdminTemplates: React.FC = () => {
               <div className="space-y-6">
                 {activeTemplate.meals.map((meal, mIdx) => (
                   <div key={mIdx} className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm space-y-4 hover:border-teal-200 transition-all">
-                    
+
                     {/* Meal Header */}
                     <div className="flex items-start gap-3">
                       <div className="grid grid-cols-1 sm:grid-cols-[130px_minmax(0,1fr)] gap-3 flex-1">
@@ -359,16 +374,26 @@ export const AdminTemplates: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Delete Meal */}
+                      {/* Duplicate & Delete Meal */}
                       {isStaff && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMeal(mIdx)}
-                          className="mt-5 h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-                          title="刪除此餐次"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-1 mt-5">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyMeal(mIdx)}
+                            className="h-10 w-10 rounded-lg hover:bg-teal-50 text-slate-400 hover:text-teal-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                            title="複製此餐次"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMeal(mIdx)}
+                            className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                            title="刪除此餐次"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -388,7 +413,7 @@ export const AdminTemplates: React.FC = () => {
                     <div className="space-y-2.5">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold text-slate-400 tracking-wider block">添加產品項目</span>
-                        
+
                         {isStaff && (
                           <button
                             onClick={() => openProductSelector(mIdx)}
@@ -411,7 +436,7 @@ export const AdminTemplates: React.FC = () => {
                               <span className="font-bold text-slate-800 w-full sm:flex-1 min-w-0 break-words">{item.productName}</span>
 
                               <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:flex sm:items-center gap-2 sm:gap-3 w-full sm:w-auto shrink-0">
-                                
+
                                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm min-w-[86px]">
                                   <input
                                     type="number"
@@ -532,13 +557,13 @@ export const AdminTemplates: React.FC = () => {
       {showProductSelector && activeMealIndex !== null && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 p-6 space-y-4 animate-scaleUp">
-            
+
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-teal-500" />
                 <h3 className="font-extrabold text-base text-slate-800">選擇產品加入母版</h3>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setShowProductSelector(false);
                   setActiveMealIndex(null);
@@ -568,23 +593,51 @@ export const AdminTemplates: React.FC = () => {
                   找不到符合的品項
                 </div>
               ) : (
-                filteredProducts.map(prod => (
-                  <button
-                    key={prod.id}
-                    onClick={() => handleSelectProduct(prod)}
-                    className="w-full p-3 bg-slate-50 hover:bg-teal-50 hover:border-teal-200 text-left rounded-xl border border-slate-200/60 flex justify-between items-center transition-all group"
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-slate-800 group-hover:text-teal-600">{prod.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">包裝規格：每{prod.packageUnit || '瓶'}裝有 {prod.packSize} {prod.unit}</div>
-                    </div>
+                filteredProducts.map(prod => {
+                  const isAdded = activeTemplate.meals[activeMealIndex].items.some(
+                    item => item.productId === prod.id
+                  );
+                  return (
+                    <button
+                      key={prod.id}
+                      onClick={() => handleSelectProduct(prod)}
+                      className={`w-full p-3 text-left rounded-xl border flex justify-between items-center transition-all group ${isAdded
+                          ? 'bg-teal-50/50 border-teal-200 hover:bg-teal-50'
+                          : 'bg-slate-50 border-slate-200/60 hover:bg-teal-50 hover:border-teal-200'
+                        }`}
+                    >
+                      <div>
+                        <div className={`font-bold text-xs ${isAdded ? 'text-teal-700' : 'text-slate-800 group-hover:text-teal-600'}`}>{prod.name}</div>
+                        <div className="text-[10px] text-slate-400 mt-1">包裝規格：每{prod.packageUnit || '瓶'}裝有 {prod.packSize} {prod.unit}</div>
+                      </div>
 
-                    <div className="px-2.5 py-1 rounded bg-white text-teal-600 border border-slate-200 font-bold text-[10px] uppercase shrink-0">
-                      選擇
-                    </div>
-                  </button>
-                ))
+                      {isAdded ? (
+                        <div className="px-2 py-1 rounded bg-teal-500 text-white font-bold text-[10px] flex items-center gap-0.5 shrink-0 shadow-sm shadow-teal-50">
+                          <Check className="w-3 h-3" />
+                          已選
+                        </div>
+                      ) : (
+                        <div className="px-2.5 py-1 rounded bg-white text-slate-500 border border-slate-200 font-bold text-[10px] uppercase shrink-0">
+                          選擇
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
               )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100">
+              <button
+                onClick={() => {
+                  setShowProductSelector(false);
+                  setActiveMealIndex(null);
+                }}
+                className="w-full h-10 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs transition-colors shadow-md shadow-teal-50 flex items-center justify-center gap-1.5"
+              >
+                <Check className="w-4 h-4" />
+                完成關閉
+              </button>
             </div>
 
           </div>
