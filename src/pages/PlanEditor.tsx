@@ -99,16 +99,22 @@ export const PlanEditor: React.FC = () => {
     setSelectedDayIndices(days.filter(d => d.dayIndex <= 3).map(d => d.dayIndex));
   };
 
-  const handleSelectProteinDays = () => {
-    setSelectedDayIndices(days.filter(d => d.dayIndex > 3 && d.dayIndex <= 15).map(d => d.dayIndex));
+  const getDayOfWeek = (dateStr: string): number => {
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return -1;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const dateNum = parseInt(parts[2], 10);
+    return new Date(year, month, dateNum).getDay();
   };
 
-  const handleSelectSlimmingDays = () => {
-    setSelectedDayIndices(days.filter(d => d.dayIndex > 15 && d.dayIndex <= 30).map(d => d.dayIndex));
-  };
-
-  const handleSelectMetabolismDays = () => {
-    setSelectedDayIndices(days.filter(d => d.dayIndex > 30).map(d => d.dayIndex));
+  const handleSelectWeekday = (targetWeekday: number) => {
+    setSelectedDayIndices(
+      days.filter(d => {
+        const wk = getDayOfWeek(d.date);
+        return wk === targetWeekday;
+      }).map(d => d.dayIndex)
+    );
   };
 
   const handleApplyBatch = async () => {
@@ -209,10 +215,11 @@ export const PlanEditor: React.FC = () => {
   if (!plan) return null;
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="relative">
+      <div className="space-y-8 animate-fadeIn">
       
-      {/* 1. Header Information Block */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        {/* 1. Header Information Block */}
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         
         {/* Left Customer Info */}
         <div className="space-y-2">
@@ -273,7 +280,7 @@ export const PlanEditor: React.FC = () => {
 
       {/* 2. Batch Operations Controller (Floating panel design) */}
       <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl p-4 sm:p-5 border border-amber-200/60 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-600" />
@@ -285,17 +292,34 @@ export const PlanEditor: React.FC = () => {
           </div>
 
           {/* Quick Select Buttons */}
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 items-center">
             <button 
+              type="button"
               onClick={handleSelectAll} 
-              className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 font-bold text-[11px]"
+              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] transition-all shadow-sm"
             >
               {selectedDayIndices.length === days.length ? '取消全選' : '全選 45天'}
             </button>
-            <button onClick={handleSelectPrepDays} className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-200 text-blue-600 font-bold text-[11px]">首 3天</button>
-            <button onClick={handleSelectProteinDays} className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-200 text-teal-600 font-bold text-[11px]">第 4-15天</button>
-            <button onClick={handleSelectSlimmingDays} className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-200 text-emerald-600 font-bold text-[11px]">第 16-30天</button>
-            <button onClick={handleSelectMetabolismDays} className="px-2.5 py-1 rounded bg-white hover:bg-slate-50 border border-slate-200 text-amber-600 font-bold text-[11px]">第 31-45天</button>
+            <button 
+              type="button"
+              onClick={handleSelectPrepDays} 
+              className="px-2.5 py-1 rounded bg-white hover:bg-blue-50 border border-blue-200 text-blue-600 font-bold text-[11px] transition-all shadow-sm"
+            >
+              首3天
+            </button>
+            {[1, 2, 3, 4, 5, 6, 0].map((w) => {
+              const label = w === 0 ? '每周日' : `每周${['', '一', '二', '三', '四', '五', '六'][w]}`;
+              return (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => handleSelectWeekday(w)}
+                  className="px-2.5 py-1 rounded bg-white hover:bg-teal-50 border border-teal-200 text-teal-600 font-bold text-[11px] transition-all shadow-sm"
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -309,7 +333,7 @@ export const PlanEditor: React.FC = () => {
             天
           </div>
 
-          <div className="flex items-center gap-2 ml-auto w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
             <select
               value={batchDayType}
               onChange={(e) => setBatchDayType(e.target.value as DayType)}
@@ -335,7 +359,7 @@ export const PlanEditor: React.FC = () => {
       </div>
 
       {/* 3. View Mode Tabs */}
-      <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-2">
         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
           <CalendarIcon className="w-5 h-5 text-teal-500" />
           45 天進度總覽表
@@ -364,14 +388,14 @@ export const PlanEditor: React.FC = () => {
       {/* 4. Main Calendar Content */}
       {viewMode === 'calendar' ? (
         // Grid view
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 sm:gap-4">
           {days.map((day) => {
             const isSelected = selectedDayIndices.includes(day.dayIndex);
             return (
               <div
                 key={day.dayIndex}
                 onClick={() => navigate(`/plan/${plan.planCode}/day/${day.dayIndex}`)}
-                className={`day-card bg-white rounded-2xl border p-4 flex flex-col justify-between cursor-pointer select-none h-[180px] relative ${
+                className={`day-card bg-white rounded-2xl border p-3 sm:p-4 flex flex-col justify-between cursor-pointer select-none h-[155px] sm:h-[180px] relative ${
                   isSelected 
                     ? 'ring-2 ring-teal-400 border-teal-200 bg-teal-50/10' 
                     : 'border-slate-100 shadow-sm'
@@ -381,8 +405,8 @@ export const PlanEditor: React.FC = () => {
                 {/* Header of card */}
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="font-mono text-xs text-slate-400 font-bold block">DAY {day.dayIndex}</span>
-                    <span className="text-xs font-bold text-slate-800 mt-0.5 block">{day.date}</span>
+                    <span className="font-mono text-[10px] sm:text-xs text-slate-400 font-bold block">DAY {day.dayIndex}</span>
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-800 mt-0.5 block">{day.date}</span>
                   </div>
 
                   {/* Checkbox for batch select */}
@@ -397,25 +421,25 @@ export const PlanEditor: React.FC = () => {
                         setSelectedDayIndices(selectedDayIndices.filter(idx => idx !== day.dayIndex));
                       }
                     }}
-                    className="w-5 h-5 rounded border-slate-300 text-teal-500 focus:ring-teal-400 cursor-pointer"
+                    className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-teal-500 focus:ring-teal-400 cursor-pointer"
                   />
                 </div>
 
                 {/* Body (Day Type Tag and Meals brief) */}
-                <div className="space-y-1 my-2">
-                  <div className="flex items-center gap-1.5">
+                <div className="space-y-1 my-1 sm:my-2">
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
                     {getDayTypeTag(day.dayType)}
-                    <span className="text-xs font-bold text-slate-800">{day.dayTypeName}</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-800">{day.dayTypeName}</span>
                   </div>
                   
                   {/* Brief count of meals */}
-                  <p className="text-[11px] text-slate-400 font-medium">
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
                     排定 {day.meals?.length || 0} 餐
                   </p>
                 </div>
 
                 {/* Actions inside card */}
-                <div className="border-t border-slate-100/50 pt-2.5 flex justify-between items-center text-[11px] font-bold text-slate-500 hover:text-teal-600 transition-colors">
+                <div className="border-t border-slate-100/50 pt-2 sm:pt-2.5 flex justify-between items-center text-[10px] sm:text-[11px] font-bold text-slate-500 hover:text-teal-600 transition-colors">
                   <span>客製細節</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </div>
@@ -478,6 +502,62 @@ export const PlanEditor: React.FC = () => {
 
             </div>
           ))}
+        </div>
+      )}
+      </div>
+
+      {/* 5. Floating Bottom Batch Action Bar */}
+      {selectedDayIndices.length > 0 && (
+        <div className="sticky bottom-4 sm:bottom-6 mx-auto w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-2xl border-2 border-amber-300 shadow-[0_20px_50px_rgba(245,158,11,0.18)] z-50 p-3 sm:p-4.5 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 animate-slide-up transition-all duration-300">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                <Sparkles className="w-4.5 h-4.5 animate-pulse" />
+              </div>
+              <div>
+                <div className="text-xs sm:text-sm font-bold text-slate-800">
+                  已選擇 <span className="text-amber-600 font-extrabold text-sm sm:text-base font-mono mx-0.5">{selectedDayIndices.length}</span> 天
+                </div>
+                <p className="text-[11px] text-slate-500 hidden sm:block">
+                  {selectedDayIndices.length === days.length ? '已選取整份 45 天菜單' : '正在進行批次模板編輯'}
+                </p>
+              </div>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setSelectedDayIndices([])}
+              className="px-2.5 py-1.5 text-xs font-bold text-slate-500 hover:text-red-500 bg-slate-100 hover:bg-red-50 rounded-lg transition-all"
+            >
+              清除選取
+            </button>
+          </div>
+
+          <div className="flex flex-row items-center gap-2 w-full md:w-auto border-t md:border-t-0 pt-2.5 md:pt-0">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+              <span className="text-xs font-bold text-slate-600 whitespace-nowrap hidden sm:inline">套用：</span>
+              <select
+                value={batchDayType}
+                onChange={(e) => setBatchDayType(e.target.value as DayType)}
+                disabled={applyingBatch}
+                className="w-full sm:w-44 h-10 px-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="PREPARATION">準備日 模板</option>
+                <option value="PROTEIN">蛋白日 模板</option>
+                <option value="SLIMMING">纖體日 模板</option>
+                <option value="METABOLISM">新陳代謝日 模板</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleApplyBatch}
+              disabled={applyingBatch}
+              className="flex-1 sm:flex-initial h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs flex items-center justify-center gap-1 shadow-md shadow-amber-100 transition-all cursor-pointer whitespace-nowrap"
+            >
+              {applyingBatch ? '更新中' : '確認套用'}
+              <Check className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

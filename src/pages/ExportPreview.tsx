@@ -16,6 +16,30 @@ import {
 import { MealPlan, MealPlanDay } from '../types';
 import html2canvas from 'html2canvas';
 
+// Helper to convert Tailwind v4 oklch() colors to compatible hsl() colors for html2canvas
+const convertOklchToHsl = (cssText: string): string => {
+  return cssText.replace(/oklch\(\s*([^/\s)]+)\s+([^/\s)]+)\s+([^/\s)]+)(?:\s*\/\s*([^)]+))?\s*\)/g, (match, lVal, cVal, hVal, aVal) => {
+    // Parse L (lightness)
+    let l = parseFloat(lVal);
+    if (lVal.indexOf('%') === -1 && l <= 1) {
+      l = l * 100;
+    }
+    // Parse C (chroma)
+    const c = parseFloat(cVal);
+    // Parse H (hue)
+    const h = parseFloat(hVal);
+    
+    // Approximate Saturation (Chroma is typically 0 to 0.4, max is around 0.4, so 0.4 * 250 = 100%)
+    const s = Math.min(100, Math.max(0, c * 250));
+    
+    if (aVal) {
+      return `hsla(${isNaN(h) ? 0 : h}, ${isNaN(s) ? 0 : s}%, ${isNaN(l) ? 0 : l}%, ${aVal})`;
+    } else {
+      return `hsl(${isNaN(h) ? 0 : h}, ${isNaN(s) ? 0 : s}%, ${isNaN(l) ? 0 : l}%)`;
+    }
+  });
+};
+
 export const ExportPreview: React.FC = () => {
   const { planCode } = useParams<{ planCode: string }>();
   const navigate = useNavigate();
@@ -78,7 +102,26 @@ export const ExportPreview: React.FC = () => {
         scale: 2, // Double DPI for super sharp text
         useCORS: true,
         backgroundColor: '#ffffff',
-        logging: false
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Process all style tags in cloned document to replace unsupported oklch() colors with standard hsl() colors
+          const styleTags = clonedDoc.getElementsByTagName('style');
+          for (let i = 0; i < styleTags.length; i++) {
+            const style = styleTags[i];
+            if (style.innerHTML) {
+              style.innerHTML = convertOklchToHsl(style.innerHTML);
+            }
+          }
+          // Process inline styles if any contain oklch
+          const allElements = clonedDoc.getElementsByTagName('*');
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i] as HTMLElement;
+            const styleAttr = el.getAttribute('style');
+            if (styleAttr && styleAttr.includes('oklch')) {
+              el.setAttribute('style', convertOklchToHsl(styleAttr));
+            }
+          }
+        }
       });
 
       const dataUrl = canvas.toDataURL('image/png');
