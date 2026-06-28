@@ -8,6 +8,7 @@ import { seedInitialDataIfEmpty } from './firebase/db';
 import { Home } from './pages/Home';
 import { CreatePlan } from './pages/CreatePlan';
 import { PlanEditor } from './pages/PlanEditor';
+import { PlanTemplates } from './pages/PlanTemplates';
 import { DayDetail } from './pages/DayDetail';
 import { ExportPreview } from './pages/ExportPreview';
 import { AdminLogin } from './pages/AdminLogin';
@@ -63,6 +64,14 @@ const App: React.FC = () => {
               <Route path="/" element={<Home />} />
               <Route path="/create-plan" element={<CreatePlan />} />
               <Route path="/plan/:planCode" element={<PlanEditor />} />
+              <Route
+                path="/plan/:planCode/templates"
+                element={
+                  <ProtectedRoute>
+                    <PlanTemplates />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/plan/:planCode/day/:dayIndex" element={<DayDetail />} />
               <Route path="/plan/:planCode/export" element={<ExportPreview />} />
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAllMealPlans, getProducts, getTemplates, getAllUsers } from '../firebase/db';
 import { MealPlan, Product, DayTypeTemplate, UserProfile } from '../types';
+import { adminTableClassName, adminTableScrollClassName } from '../utils/tableLayout';
 import { 
   Users, 
   FileText, 
@@ -268,8 +269,8 @@ export const AdminDashboard: React.FC = () => {
             目前資料庫中尚未建立任何菜單！
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className={adminTableScrollClassName}>
+            <table className={adminTableClassName}>
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold">
                   <th className="py-3 px-2">顧客姓名</th>

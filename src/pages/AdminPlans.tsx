@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAllMealPlans, hardDeleteMealPlan, softDeleteMealPlan } from '../firebase/db';
 import { MealPlan } from '../types';
+import { adminTableClassName, adminTableScrollClassName } from '../utils/tableLayout';
 import { 
   FileText, 
   Search, 
@@ -140,8 +141,8 @@ export const AdminPlans: React.FC = () => {
             找不到符合的顧客菜單。
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className={adminTableScrollClassName}>
+            <table className={adminTableClassName}>
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold bg-slate-50/20">
                   <th className="py-3 px-4">顧客姓名</th>

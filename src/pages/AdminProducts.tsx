@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProducts, createProduct, updateProduct, deleteProductDoc } from '../firebase/db';
-import { Product } from '../types';
+import { EditableQuantity, Product } from '../types';
+import { isValidProductForm, numberInputValue, parseEditableNumber } from '../utils/numberInput';
+import { adminTableClassName, adminTableScrollClassName } from '../utils/tableLayout';
 import { 
   Package, 
   Plus, 
@@ -29,8 +31,8 @@ export const AdminProducts: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
-  const [packPrice, setPackPrice] = useState<number>(0);
-  const [packSize, setPackSize] = useState<number>(0);
+  const [packPrice, setPackPrice] = useState<EditableQuantity>(0);
+  const [packSize, setPackSize] = useState<EditableQuantity>(0);
   const [packageUnit, setPackageUnit] = useState('瓶');
   const [unit, setUnit] = useState('匙');
   const [saving, setSaving] = useState(false);
@@ -79,8 +81,8 @@ export const AdminProducts: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || packPrice <= 0 || packSize <= 0) {
-      alert('請填寫完整商品名稱、容量與價格欄位！');
+    if (!isValidProductForm({ name, packPrice, packSize })) {
+      alert('請填寫完整商品名稱、容量與價格欄位；售價可為 0，包裝內容量需大於 0。');
       return;
     }
 
@@ -93,8 +95,8 @@ export const AdminProducts: React.FC = () => {
     try {
       const pData = {
         name: name.trim(),
-        packPrice,
-        packSize,
+        packPrice: packPrice as number,
+        packSize: packSize as number,
         packageUnit: packageUnit.trim(),
         unit: unit.trim()
       };
@@ -191,8 +193,8 @@ export const AdminProducts: React.FC = () => {
             找不到符合條件的營養品。
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className={adminTableScrollClassName}>
+            <table className={adminTableClassName}>
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-bold bg-slate-50/20">
                   <th className="py-3 px-4">產品名稱</th>
@@ -296,10 +298,11 @@ export const AdminProducts: React.FC = () => {
                   <input
                     type="number"
                     required
-                    min="1"
+                    min="0"
+                    step="any"
                     placeholder="例如 150"
-                    value={packSize || ''}
-                    onChange={(e) => setPackSize(parseInt(e.target.value, 10) || 0)}
+                    value={numberInputValue(packSize)}
+                    onChange={(e) => setPackSize(parseEditableNumber(e.target.value))}
                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-teal-400"
                   />
                 </div>
@@ -312,10 +315,11 @@ export const AdminProducts: React.FC = () => {
                   <input
                     type="number"
                     required
-                    min="1"
+                    min="0"
+                    step="any"
                     placeholder="例如 1100"
-                    value={packPrice || ''}
-                    onChange={(e) => setPackPrice(parseInt(e.target.value, 10) || 0)}
+                    value={numberInputValue(packPrice)}
+                    onChange={(e) => setPackPrice(parseEditableNumber(e.target.value))}
                     className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-teal-400"
                   />
                 </div>
@@ -355,8 +359,8 @@ export const AdminProducts: React.FC = () => {
                   規格語意預覽（確認包裝與容量關係）：
                 </div>
                 <p className="text-slate-500 text-[10.5px] leading-relaxed">
-                  系統將呈現為：當顧客以 <span className="font-bold text-teal-600">NT$ {(packPrice || 0).toLocaleString()} 元</span> 購買 <span className="font-bold text-slate-800">1 {packageUnit || '瓶'}</span> 該產品時，
-                  其中每 1 {packageUnit || '瓶'} 含有 <span className="font-bold text-slate-800">{packSize || 0} {unit || '匙'}</span>。
+                  系統將呈現為：當顧客以 <span className="font-bold text-teal-600">NT$ {(typeof packPrice === 'number' ? packPrice : 0).toLocaleString()} 元</span> 購買 <span className="font-bold text-slate-800">1 {packageUnit || '瓶'}</span> 該產品時，
+                  其中每 1 {packageUnit || '瓶'} 含有 <span className="font-bold text-slate-800">{typeof packSize === 'number' ? packSize : 0} {unit || '匙'}</span>。
                 </p>
               </div>
 

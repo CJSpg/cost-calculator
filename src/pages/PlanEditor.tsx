@@ -259,11 +259,21 @@ export const PlanEditor: React.FC = () => {
         </div>
 
         {/* Right Actions */}
-        <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2.5 w-full md:w-auto">
+          {isStaff && (
+            <Link
+              to={`/plan/${plan.planCode}/templates`}
+              className="w-full sm:w-auto h-11 px-4 rounded-xl border border-teal-200 hover:bg-teal-50 text-teal-700 font-bold text-sm flex items-center justify-center gap-1.5 transition-all"
+            >
+              <BookOpen className="w-4 h-4" />
+              編輯此菜單模板
+            </Link>
+          )}
+
           {/* Export to Image */}
           <Link
             to={`/plan/${plan.planCode}/export`}
-            className="flex-1 sm:flex-initial h-11 px-5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-all"
+            className="w-full sm:w-auto h-11 px-5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-all"
           >
             <FileImage className="w-4 h-4" />
             匯出美圖 (PNG)
@@ -273,7 +283,7 @@ export const PlanEditor: React.FC = () => {
           {isStaff && (
             <button
               onClick={handleDeletePlan}
-              className="h-11 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-bold text-sm flex items-center justify-center gap-1.5 transition-all"
+              className="w-full sm:w-auto h-11 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 font-bold text-sm flex items-center justify-center gap-1.5 transition-all"
               title="刪除菜單"
             >
               <Trash2 className="w-4 h-4" />

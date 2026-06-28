@@ -61,6 +61,13 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 import { Product, DayTypeTemplate, MealPlan, MealPlanDay, DayType, UserProfile, UserRole } from '../types';
+import {
+  cloneDayTypeTemplate,
+  replaceDayTypeTemplate,
+  sanitizeDayTypeMeals,
+  sanitizeMealPlanMeals,
+  templateToMealPlanMeals,
+} from '../utils/mealPlanTemplates';
 
 // ==========================================
 // 1. Plan Code Generation
@@ -346,8 +353,55 @@ export async function saveTemplate(id: DayType, template: Omit<DayTypeTemplate, 
   const docRef = doc(db, 'dayTypeTemplates', id);
   await setDoc(docRef, {
     ...template,
+    meals: sanitizeDayTypeMeals(id, template.meals),
     updatedAt: serverTimestamp()
   }, { merge: true });
+}
+
+// ==========================================
+// 4.5 MealPlan-scoped templates
+// ==========================================
+export async function getMealPlanTemplates(planCode: string): Promise<DayTypeTemplate[]> {
+  const plan = await getMealPlanByCode(planCode);
+  if (plan?.templates && plan.templates.length > 0) {
+    return plan.templates.map(cloneDayTypeTemplate);
+  }
+
+  const globalTemplates = await getTemplates();
+  return globalTemplates.map(cloneDayTypeTemplate);
+}
+
+export async function initializeMealPlanTemplates(
+  planCode: string,
+  templates: DayTypeTemplate[]
+): Promise<void> {
+  const planRef = doc(db, 'mealPlans', planCode);
+  await updateDoc(planRef, {
+    templates: templates.map(cloneDayTypeTemplate),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function saveMealPlanTemplate(
+  planCode: string,
+  id: DayType,
+  template: Omit<DayTypeTemplate, 'id' | 'updatedAt'>
+): Promise<void> {
+  const currentTemplates = await getMealPlanTemplates(planCode);
+  const updatedTemplate = cloneDayTypeTemplate({
+    id,
+    name: template.name,
+    description: template.description || '',
+    meals: sanitizeDayTypeMeals(id, template.meals),
+    updatedAt: new Date()
+  });
+  const updatedTemplates = replaceDayTypeTemplate(currentTemplates, updatedTemplate);
+
+  const planRef = doc(db, 'mealPlans', planCode);
+  await updateDoc(planRef, {
+    templates: updatedTemplates,
+    updatedAt: serverTimestamp()
+  });
 }
 
 // ==========================================
@@ -377,6 +431,10 @@ export async function createMealPlan(customerName: string, startDateStr: string,
   endDate.setDate(startDate.getDate() + 44);
   const endDateStr = endDate.toISOString().split('T')[0];
 
+  // Load templates to seed the plan and its initial 45 days.
+  const templates = await getTemplates();
+  const scopedTemplates = templates.map(cloneDayTypeTemplate);
+
   const planData: MealPlan = {
     planCode: code,
     customerName,
@@ -384,22 +442,19 @@ export async function createMealPlan(customerName: string, startDateStr: string,
     endDate: endDateStr,
     status: 'active',
     createdBy: creatorUid || '',
+    templates: scopedTemplates,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   };
 
-  // Save parent document
-  await setDoc(doc(db, 'mealPlans', code), planData);
+  const prepTemp = scopedTemplates.find(t => t.id === 'PREPARATION');
+  const proteinTemp = scopedTemplates.find(t => t.id === 'PROTEIN');
+  const slimTemp = scopedTemplates.find(t => t.id === 'SLIMMING');
+  const metaTemp = scopedTemplates.find(t => t.id === 'METABOLISM');
 
-  // Load templates to seed days
-  const templates = await getTemplates();
-  const prepTemp = templates.find(t => t.id === 'PREPARATION');
-  const proteinTemp = templates.find(t => t.id === 'PROTEIN');
-  const slimTemp = templates.find(t => t.id === 'SLIMMING');
-  const metaTemp = templates.find(t => t.id === 'METABOLISM');
-
-  // We write the 45 days. Since Firestore batch limit is 50 writes, we can do all 45 in a single batch!
+  // Parent document + 45 days are committed together so failed creation does not leave an empty plan.
   const batch = writeBatch(db);
+  batch.set(doc(db, 'mealPlans', code), planData);
   
   for (let dayIndex = 1; dayIndex <= 45; dayIndex++) {
     const curDate = new Date(startDate.getTime());
@@ -432,18 +487,7 @@ export async function createMealPlan(customerName: string, startDateStr: string,
     const dayRef = doc(db, 'mealPlans', code, 'days', `day-${dayIndex}`);
     
     // Convert template meals to meal plan meals
-    const meals = selectedTemplate ? selectedTemplate.meals.map(m => ({
-      time: m.time,
-      title: m.title,
-      note: m.note || '',
-      items: m.items.map(item => ({
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        unit: item.unit,
-        note: item.note || ''
-      }))
-    })) : [];
+    const meals = selectedTemplate ? templateToMealPlanMeals(selectedTemplate) : [];
 
     const dayData: MealPlanDay = {
       date: curDateStr,
@@ -481,7 +525,11 @@ export async function getMealPlanDays(planCode: string): Promise<MealPlanDay[]> 
 // Update single day meals or day type
 export async function updateMealPlanDay(planCode: string, dayIndex: number, update: Partial<MealPlanDay>): Promise<void> {
   const dayRef = doc(db, 'mealPlans', planCode, 'days', `day-${dayIndex}`);
-  await updateDoc(dayRef, update);
+  const updatePayload = { ...update };
+  if (update.meals) {
+    updatePayload.meals = sanitizeMealPlanMeals(update.meals);
+  }
+  await updateDoc(dayRef, updatePayload);
 
   // Update parent updatedAt
   const planRef = doc(db, 'mealPlans', planCode);
@@ -492,24 +540,12 @@ export async function updateMealPlanDay(planCode: string, dayIndex: number, upda
 
 // Apply day template to single day
 export async function applyTemplateToDay(planCode: string, dayIndex: number, dayType: DayType): Promise<void> {
-  const templates = await getTemplates();
+  const templates = await getMealPlanTemplates(planCode);
   const template = templates.find(t => t.id === dayType);
   if (!template) return;
 
   const dayRef = doc(db, 'mealPlans', planCode, 'days', `day-${dayIndex}`);
-  
-  const meals = template.meals.map(m => ({
-    time: m.time,
-    title: m.title,
-    note: m.note || '',
-    items: m.items.map(item => ({
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unit: item.unit,
-      note: item.note || ''
-    }))
-  }));
+  const meals = templateToMealPlanMeals(template);
 
   await updateDoc(dayRef, {
     dayType,
@@ -526,23 +562,12 @@ export async function applyTemplateToDay(planCode: string, dayIndex: number, day
 
 // Batch apply day type to multiple days
 export async function batchApplyTemplateToDays(planCode: string, dayIndices: number[], dayType: DayType): Promise<void> {
-  const templates = await getTemplates();
+  const templates = await getMealPlanTemplates(planCode);
   const template = templates.find(t => t.id === dayType);
   if (!template) return;
 
   const batch = writeBatch(db);
-  const meals = template.meals.map(m => ({
-    time: m.time,
-    title: m.title,
-    note: m.note || '',
-    items: m.items.map(item => ({
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unit: item.unit,
-      note: item.note || ''
-    }))
-  }));
+  const meals = templateToMealPlanMeals(template);
 
   dayIndices.forEach(idx => {
     const dayRef = doc(db, 'mealPlans', planCode, 'days', `day-${idx}`);

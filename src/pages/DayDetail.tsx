@@ -26,7 +26,8 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { MealPlan, MealPlanDay, MealPlanMeal, MealPlanMealItem, Product } from '../types';
+import { EditableQuantity, MealPlan, MealPlanDay, MealPlanMeal, MealPlanMealItem, Product } from '../types';
+import { normalizePositiveQuantity, numberInputValue, parseEditableNumber } from '../utils/numberInput';
 
 export const DayDetail: React.FC = () => {
   const { planCode, dayIndex } = useParams<{ planCode: string; dayIndex: string }>();
@@ -150,7 +151,7 @@ export const DayDetail: React.FC = () => {
   };
 
   // Update item quantity
-  const handleItemQtyChange = (mealIndex: number, itemIndex: number, qty: number) => {
+  const handleItemQtyChange = (mealIndex: number, itemIndex: number, qty: EditableQuantity) => {
     if (!dayPlan) return;
     const updatedMeals = [...dayPlan.meals];
     updatedMeals[mealIndex].items[itemIndex].quantity = qty;
@@ -291,7 +292,7 @@ export const DayDetail: React.FC = () => {
                 className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-teal-500 hover:bg-teal-600 disabled:bg-slate-300 text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-md shadow-teal-50 transition-colors"
               >
                 <Save className="w-4 h-4" />
-                {saving ? '正在儲存...' : '儲存今日更動'}
+                {saving ? '正在儲存...' : '儲存變更'}
               </button>
             </>
           ) : (
@@ -341,51 +342,49 @@ export const DayDetail: React.FC = () => {
                   className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm space-y-4 hover:border-teal-200 transition-all"
                 >
                   {/* Meal Header Inputs */}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    
-                    {/* Time Input */}
-                    <div className="w-full sm:w-[130px] shrink-0">
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">用餐時間</label>
-                      <input
-                        type="time"
-                        value={meal.time}
-                        readOnly={!isStaff}
-                        onChange={(e) => handleMealFieldChange(mIdx, 'time', e.target.value)}
-                        className={`w-full h-10 px-3 border rounded-lg text-sm text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400 ${
-                          !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200 cursor-pointer'
-                        }`}
-                      />
-                    </div>
+                  <div className="flex items-start gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-[130px_minmax(0,1fr)] gap-3 flex-1">
+                      {/* Time Input */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-1">用餐時間</label>
+                        <input
+                          type="time"
+                          value={meal.time}
+                          readOnly={!isStaff}
+                          onChange={(e) => handleMealFieldChange(mIdx, 'time', e.target.value)}
+                          className={`w-full h-10 px-3 border rounded-lg text-sm text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400 ${
+                            !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200 cursor-pointer'
+                          }`}
+                        />
+                      </div>
 
-                    {/* Meal Title */}
-                    <div className="flex-1">
-                      <label className="text-[10px] font-bold text-slate-400 block mb-1">餐次名稱</label>
-                      <input
-                        type="text"
-                        value={meal.title}
-                        placeholder="例如 早餐、運動補充、睡前"
-                        readOnly={!isStaff}
-                        onChange={(e) => handleMealFieldChange(mIdx, 'title', e.target.value)}
-                        className={`w-full h-10 px-3 border rounded-lg text-sm text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400 ${
-                          !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200'
-                        }`}
-                      />
+                      {/* Meal Title */}
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-400 block mb-1">餐次名稱</label>
+                        <input
+                          type="text"
+                          value={meal.title}
+                          placeholder="例如 早餐、運動補充、睡前"
+                          readOnly={!isStaff}
+                          onChange={(e) => handleMealFieldChange(mIdx, 'title', e.target.value)}
+                          className={`w-full h-10 px-3 border rounded-lg text-sm text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400 ${
+                            !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200'
+                          }`}
+                        />
+                      </div>
                     </div>
 
                     {/* Delete Meal */}
                     {isStaff && (
-                      <div className="sm:self-end">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMeal(mIdx)}
-                          className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors cursor-pointer"
-                          title="刪除此餐次"
-                        >
-                          <Trash2 className="w-4.5 h-4.5" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMeal(mIdx)}
+                        className="mt-5 h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                        title="刪除此餐次"
+                      >
+                        <Trash2 className="w-4.5 h-4.5" />
+                      </button>
                     )}
-
                   </div>
 
                   {/* Meal Note */}
@@ -430,23 +429,24 @@ export const DayDetail: React.FC = () => {
                             className="bg-slate-50 p-3 rounded-xl border border-slate-150 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
                           >
                             {/* Product Name */}
-                            <div className="flex items-center gap-2 flex-1">
+                            <div className="flex items-center gap-2 w-full sm:flex-1 min-w-0">
                               <Package className="w-4 h-4 text-slate-400 shrink-0" />
-                              <span className="font-bold text-slate-800">{item.productName}</span>
+                              <span className="font-bold text-slate-800 min-w-0 break-words">{item.productName}</span>
                             </div>
 
                             {/* Qty & Note in compact container */}
-                            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-between sm:justify-start">
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:flex sm:items-center gap-2 sm:gap-3 w-full sm:w-auto shrink-0">
                               
                               {/* Qty Input with dynamic units */}
-                              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
+                              <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm min-w-[86px]">
                                 <input
                                   type="number"
-                                  min="1"
-                                  step="1"
-                                  value={item.quantity}
+                                  min="0"
+                                  step="any"
+                                  value={numberInputValue(item.quantity)}
                                   readOnly={!isStaff}
-                                  onChange={(e) => handleItemQtyChange(mIdx, iIdx, Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                  onChange={(e) => handleItemQtyChange(mIdx, iIdx, parseEditableNumber(e.target.value))}
+                                  onBlur={() => handleItemQtyChange(mIdx, iIdx, normalizePositiveQuantity(item.quantity))}
                                   className={`w-12 h-7 border-0 text-center text-xs font-extrabold text-slate-800 focus:outline-none focus:ring-0 p-0 ${
                                     !isStaff ? 'bg-transparent text-slate-600 pointer-events-none' : ''
                                   }`}
@@ -461,42 +461,44 @@ export const DayDetail: React.FC = () => {
                                 placeholder={isStaff ? '備註' : ''}
                                 readOnly={!isStaff}
                                 onChange={(e) => handleItemNoteChange(mIdx, iIdx, e.target.value)}
-                                className={`h-8 px-2.5 border border-slate-200 rounded-lg text-[11px] text-slate-500 w-28 sm:w-36 focus:outline-none ${
+                                className={`h-8 px-2.5 border border-slate-200 rounded-lg text-[11px] text-slate-500 w-full sm:w-36 focus:outline-none min-w-0 ${
                                   !isStaff ? 'bg-transparent border-transparent shadow-none text-slate-400 cursor-default p-0' : 'bg-white'
                                 }`}
                               />
 
-                              {/* Move Item up/down */}
-                              {isStaff && meal.items.length > 1 && (
-                                <div className="flex gap-1 shrink-0">
+                              {isStaff && (
+                                <div className="flex items-center justify-end gap-1 shrink-0">
+                                  {/* Move Item up/down */}
+                                  {meal.items.length > 1 && (
+                                    <>
+                                      <button
+                                        onClick={() => handleMoveItem(mIdx, iIdx, 'up')}
+                                        disabled={iIdx === 0}
+                                        className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                        title="向上移動"
+                                      >
+                                        <ArrowUp className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleMoveItem(mIdx, iIdx, 'down')}
+                                        disabled={iIdx === meal.items.length - 1}
+                                        className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                        title="向下移動"
+                                      >
+                                        <ArrowDown className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+
+                                  {/* Remove Item */}
                                   <button
-                                    onClick={() => handleMoveItem(mIdx, iIdx, 'up')}
-                                    disabled={iIdx === 0}
-                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
-                                    title="向上移動"
+                                    onClick={() => handleRemoveItem(mIdx, iIdx)}
+                                    className="w-8 h-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors border border-transparent hover:border-red-100"
+                                    title="移除此品項"
                                   >
-                                    <ArrowUp className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleMoveItem(mIdx, iIdx, 'down')}
-                                    disabled={iIdx === meal.items.length - 1}
-                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
-                                    title="向下移動"
-                                  >
-                                    <ArrowDown className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
-                              )}
-
-                              {/* Remove Item */}
-                              {isStaff && (
-                                <button
-                                  onClick={() => handleRemoveItem(mIdx, iIdx)}
-                                  className="w-8 h-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors border border-transparent hover:border-red-100"
-                                  title="移除此品項"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
                               )}
 
                             </div>
@@ -534,7 +536,7 @@ export const DayDetail: React.FC = () => {
             </li>
             <li className="flex gap-2">
               <span className="w-5 h-5 rounded-full bg-teal-50 text-teal-600 font-extrabold flex items-center justify-center text-[10px] shrink-0 border border-teal-100">4</span>
-              <span><strong>最後記得存檔：</strong> 編輯完畢後，請記得點擊上方醒目的<strong>「儲存今日更動」</strong>，更動才會正式提交到雲端資料庫上。</span>
+              <span><strong>最後記得存檔：</strong> 編輯完畢後，請記得點擊上方醒目的<strong>「儲存變更」</strong>，更動才會正式提交到雲端資料庫上。</span>
             </li>
           </ul>
 

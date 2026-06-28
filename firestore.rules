@@ -72,5 +72,12 @@ service cloud.firestore {
       allow update: if exists(/databases/$(database)/documents/mealPlans/$(planCode));
       allow delete: if isStaff();
     }
+
+    // 6. Meal Plan Scoped Templates Subcollection
+    match /mealPlans/{planCode}/templates/{templateId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isStaff();
+    }
   }
 }

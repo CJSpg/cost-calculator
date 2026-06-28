@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import {
+  appHeaderClassName,
+  mobileDrawerClassName,
+  mobileHeaderSpacerClassName,
+} from '../utils/navigationLayout';
 import { 
   Menu, 
   X, 
@@ -54,7 +59,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* 1. Global Bright Header */}
-      <header className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-50">
+      <header className={appHeaderClassName}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
           {/* Logo */}
@@ -171,10 +176,11 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         </div>
       </header>
+      <div className={mobileHeaderSpacerClassName} aria-hidden="true" />
 
       {/* 2. Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-100 shadow-lg px-4 py-3 flex flex-col gap-1.5 animate-fadeIn">
+        <div className={mobileDrawerClassName}>
           {(!isAdminSection || !userProfile) ? (
             <>
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-3 mb-1">一般功能</div>

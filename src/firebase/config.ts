@@ -3,12 +3,16 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
+const resolvedFirebaseConfig = firebaseConfig as typeof firebaseConfig & {
+  firestoreDatabaseId?: string;
+};
+
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(resolvedFirebaseConfig);
 
 // Initialize Firestore with specific database ID if present, otherwise default
-export const db = firebaseConfig.firestoreDatabaseId 
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
+export const db = resolvedFirebaseConfig.firestoreDatabaseId
+  ? getFirestore(app, resolvedFirebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 
 // Initialize Firebase Auth

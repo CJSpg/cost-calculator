@@ -19,10 +19,12 @@ export interface Product {
   createdAt: any;      // Firestore Timestamp
 }
 
+export type EditableQuantity = number | '';
+
 export interface DayTypeMealItem {
   productId: string;
   productName: string;
-  quantity: number;
+  quantity: EditableQuantity;
   unit: string;
   note: string;
 }
@@ -48,7 +50,7 @@ export interface DayTypeTemplate {
 export interface MealPlanMealItem {
   productId: string;
   productName: string;
-  quantity: number;
+  quantity: EditableQuantity;
   unit: string;
   note: string;
 }
@@ -76,6 +78,7 @@ export interface MealPlan {
   status: 'active' | 'archived' | 'deleted';
   createdBy?: string; // UID of creator if logged in, or null for anonymous
   note?: string;
+  templates?: DayTypeTemplate[];
   createdAt: any;
   updatedAt: any;
 }

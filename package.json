@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:unit": "node tests/unit-behavior.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

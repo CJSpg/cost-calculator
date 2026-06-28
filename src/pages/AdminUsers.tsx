@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAllUsers, updateUserProfile } from '../firebase/db';
 import { UserProfile, UserRole } from '../types';
+import { adminTableClassName, adminTableScrollClassName } from '../utils/tableLayout';
 import { 
   Users, 
   Lock, 
@@ -137,8 +138,8 @@ export const AdminUsers: React.FC = () => {
           註冊成員清單 ({users.length} 名使用者)
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className={adminTableScrollClassName}>
+          <table className={adminTableClassName}>
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-bold bg-slate-50/20">
                 <th className="py-3 px-4">成員暱稱 / 帳號</th>
