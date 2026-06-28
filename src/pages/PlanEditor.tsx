@@ -6,7 +6,8 @@ import {
   batchApplyTemplateToDays,
   applyTemplateToDay,
   softDeleteMealPlan,
-  getProducts
+  getProducts,
+  updateMealPlan
 } from '../firebase/db';
 import { 
   Calendar as CalendarIcon, 
@@ -23,7 +24,9 @@ import {
   Trash2,
   Sparkles,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Edit2,
+  X
 } from 'lucide-react';
 import { MealPlan, MealPlanDay, DayType, Product } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +45,11 @@ export const PlanEditor: React.FC = () => {
   const [batchDayType, setBatchDayType] = useState<DayType>('PREPARATION');
   const [applyingBatch, setApplyingBatch] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  // State for editing customer name
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [savingName, setSavingName] = useState(false);
 
   // Active view tab: Calendar view vs list view (great for mobile!)
   const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'summary'>('calendar');
@@ -219,6 +227,31 @@ export const PlanEditor: React.FC = () => {
     }
   };
 
+  const handleStartEditName = () => {
+    if (!plan) return;
+    setEditedName(plan.customerName);
+    setIsEditingName(true);
+  };
+
+  const handleSaveName = async () => {
+    if (!plan || !editedName.trim() || !planCode) return;
+    setSavingName(true);
+    try {
+      await updateMealPlan(planCode.toUpperCase(), { customerName: editedName.trim() });
+      setPlan(prev => prev ? { ...prev, customerName: editedName.trim() } : null);
+      setIsEditingName(false);
+    } catch (err) {
+      console.error('Failed to update customer name:', err);
+      alert('更新姓名失敗，請稍後再試。');
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false);
+  };
+
   if (loading) {
     return (
       <div className="py-24 text-center space-y-4">
@@ -243,9 +276,57 @@ export const PlanEditor: React.FC = () => {
             <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
               <User className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 font-display">
-              {plan.customerName} 的 45天菜單
-            </h1>
+            {isEditingName ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  disabled={savingName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && editedName.trim()) {
+                      handleSaveName();
+                    } else if (e.key === 'Escape') {
+                      handleCancelEditName();
+                    }
+                  }}
+                  className="px-2.5 py-1 text-sm sm:text-base font-bold rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 w-44 sm:w-56"
+                  maxLength={50}
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveName}
+                  disabled={savingName || !editedName.trim()}
+                  className="w-7 h-7 rounded-md bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center transition-colors disabled:opacity-50"
+                  title="儲存"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={handleCancelEditName}
+                  disabled={savingName}
+                  className="w-7 h-7 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors"
+                  title="取消"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-950 font-display">
+                  {plan.customerName} 的 45天菜單
+                </h1>
+                {isStaff && (
+                  <button
+                    onClick={handleStartEditName}
+                    className="text-slate-400 hover:text-teal-600 p-1 rounded-lg hover:bg-slate-50 transition-colors"
+                    title="修改顧客姓名"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-400">

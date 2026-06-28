@@ -596,6 +596,15 @@ export async function softDeleteMealPlan(planCode: string): Promise<void> {
   });
 }
 
+// Update MealPlan metadata
+export async function updateMealPlan(planCode: string, update: Partial<MealPlan>): Promise<void> {
+  const planRef = doc(db, 'mealPlans', planCode);
+  await updateDoc(planRef, {
+    ...update,
+    updatedAt: serverTimestamp()
+  });
+}
+
 // Master Admin View: Get all non-deleted meal plans
 export async function getAllMealPlans(): Promise<MealPlan[]> {
   const snapshot = await getDocs(query(collection(db, 'mealPlans'), orderBy('createdAt', 'desc')));
