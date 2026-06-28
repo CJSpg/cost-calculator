@@ -169,6 +169,8 @@ export const AdminTemplates: React.FC = () => {
 
   const handleRemoveItem = (mealIndex: number, itemIndex: number) => {
     if (!activeTemplate) return;
+    const item = activeTemplate.meals[mealIndex].items[itemIndex];
+    if (item && !window.confirm(`確定要刪除「${item.productName}」嗎？`)) return;
     const updatedMeals = [...activeTemplate.meals];
     updatedMeals[mealIndex].items = updatedMeals[mealIndex].items.filter((_, idx) => idx !== itemIndex);
     setActiveTemplate({ ...activeTemplate, meals: updatedMeals });

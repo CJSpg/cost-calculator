@@ -169,6 +169,8 @@ export const DayDetail: React.FC = () => {
   // Remove item from a meal
   const handleRemoveItem = (mealIndex: number, itemIndex: number) => {
     if (!dayPlan) return;
+    const item = dayPlan.meals[mealIndex].items[itemIndex];
+    if (item && !window.confirm(`確定要刪除「${item.productName}」嗎？`)) return;
     const updatedMeals = [...dayPlan.meals];
     updatedMeals[mealIndex].items = updatedMeals[mealIndex].items.filter((_, idx) => idx !== itemIndex);
     setDayPlan({ ...dayPlan, meals: updatedMeals });
