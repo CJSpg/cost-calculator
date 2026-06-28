@@ -6,6 +6,7 @@ import {
   getMealPlanTemplates,
   getProducts,
   saveMealPlanTemplate,
+  getTemplates,
 } from '../firebase/db';
 import {
   DayType,
@@ -71,6 +72,7 @@ export const PlanTemplates: React.FC = () => {
 
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [templates, setTemplates] = useState<DayTypeTemplate[]>([]);
+  const [globalTemplates, setGlobalTemplates] = useState<DayTypeTemplate[]>([]);
   const [activeType, setActiveType] = useState<DayType>('PREPARATION');
   const [activeTemplate, setActiveTemplate] = useState<DayTypeTemplate | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -86,10 +88,11 @@ export const PlanTemplates: React.FC = () => {
     setLoading(true);
     try {
       const pCode = planCode.toUpperCase();
-      const [planData, planTemplates, products] = await Promise.all([
+      const [planData, planTemplates, products, systemTemplates] = await Promise.all([
         getMealPlanByCode(pCode),
         getMealPlanTemplates(pCode),
         getProducts(),
+        getTemplates(),
       ]);
 
       if (!planData) {
@@ -101,6 +104,7 @@ export const PlanTemplates: React.FC = () => {
       setPlan(planData);
       setTemplates(planTemplates);
       setAllProducts(products);
+      setGlobalTemplates(systemTemplates);
     } catch (err) {
       console.error(err);
       alert('讀取菜單模板失敗，請稍後再試。');
@@ -169,6 +173,35 @@ export const PlanTemplates: React.FC = () => {
     setActiveTemplate({
       ...activeTemplate,
       meals: updatedMeals,
+    });
+  };
+
+  const handleCopyFromOtherTemplate = (value: string) => {
+    if (!activeTemplate) return;
+    
+    const [sourceType, templateId] = value.split('-');
+    let sourceTemplate: DayTypeTemplate | undefined;
+    
+    if (sourceType === 'plan') {
+      sourceTemplate = templates.find(t => t.id === templateId);
+    } else if (sourceType === 'global') {
+      sourceTemplate = globalTemplates.find(t => t.id === templateId);
+    }
+    
+    if (!sourceTemplate) return;
+    
+    const confirmMsg = `確定要將「${sourceTemplate.name}」的所有餐次與備註內容複製並覆蓋目前的「${activeTemplate.name}」嗎？\n(此操作在您點選「儲存此模板」前不會寫入資料庫)`;
+    if (!window.confirm(confirmMsg)) return;
+    
+    const clonedMeals = JSON.parse(JSON.stringify(sourceTemplate.meals));
+    clonedMeals.forEach((meal: any) => {
+      meal.id = `${activeType.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    });
+    
+    setActiveTemplate({
+      ...activeTemplate,
+      description: sourceTemplate.description || '',
+      meals: clonedMeals
     });
   };
 
@@ -365,13 +398,45 @@ export const PlanTemplates: React.FC = () => {
             </h3>
 
             {isStaff && (
-              <button
-                onClick={handleAddMeal}
-                className="h-9 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-100 font-bold text-xs flex items-center gap-1 transition-all shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                新增餐次
-              </button>
+              <div className="flex gap-2">
+                <select
+                  onChange={(e) => {
+                    handleCopyFromOtherTemplate(e.target.value);
+                    e.target.value = ''; // Reset select after copy trigger
+                  }}
+                  defaultValue=""
+                  className="h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-xs focus:outline-none cursor-pointer hover:border-teal-350 transition-colors"
+                >
+                  <option value="" disabled>快速複製自...</option>
+                  
+                  <optgroup label="本菜單的其他日模板">
+                    {templates
+                      .filter(t => t.id !== activeType)
+                      .map(t => (
+                        <option key={t.id} value={`plan-${t.id}`}>
+                          {t.name}
+                        </option>
+                      ))
+                    }
+                  </optgroup>
+                  
+                  <optgroup label="系統預設模板">
+                    {globalTemplates.map(t => (
+                      <option key={t.id} value={`global-${t.id}`}>
+                        系統 • {t.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+
+                <button
+                  onClick={handleAddMeal}
+                  className="h-9 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-100 font-bold text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" />
+                  新增餐次
+                </button>
+              </div>
             )}
           </div>
 

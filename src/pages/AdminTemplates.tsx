@@ -127,6 +127,27 @@ export const AdminTemplates: React.FC = () => {
     });
   };
 
+  // Copy all meals and description from another day type template
+  const handleCopyFromOtherTemplate = (templateId: string) => {
+    if (!activeTemplate) return;
+    const sourceTemplate = templates.find(t => t.id === templateId);
+    if (!sourceTemplate) return;
+
+    const confirmMsg = `確定要將「${sourceTemplate.name}」的所有餐次與備註內容複製並覆蓋目前的「${activeTemplate.name}」嗎？\n(此操作在您點選「儲存模板設定」前不會寫入資料庫)`;
+    if (!window.confirm(confirmMsg)) return;
+
+    const clonedMeals = JSON.parse(JSON.stringify(sourceTemplate.meals));
+    clonedMeals.forEach((meal: any) => {
+      meal.id = `${activeType.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    });
+
+    setActiveTemplate({
+      ...activeTemplate,
+      description: sourceTemplate.description || '',
+      meals: clonedMeals
+    });
+  };
+
   // Delete meal from template
   const handleDeleteMeal = (mealIndex: number) => {
     if (!activeTemplate) return;
@@ -328,13 +349,34 @@ export const AdminTemplates: React.FC = () => {
               </h3>
 
               {isStaff && (
-                <button
-                  onClick={handleAddMeal}
-                  className="h-8.5 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-100 font-bold text-xs flex items-center gap-1 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  新增餐次
-                </button>
+                <div className="flex gap-2">
+                  <select
+                    onChange={(e) => {
+                      handleCopyFromOtherTemplate(e.target.value);
+                      e.target.value = ''; // Reset select after copy trigger
+                    }}
+                    defaultValue=""
+                    className="h-8.5 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-xs focus:outline-none cursor-pointer hover:border-teal-350 transition-colors"
+                  >
+                    <option value="" disabled>快速複製自...</option>
+                    {templates
+                      .filter(t => t.id !== activeType)
+                      .map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))
+                    }
+                  </select>
+
+                  <button
+                    onClick={handleAddMeal}
+                    className="h-8.5 px-3 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-100 font-bold text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    新增餐次
+                  </button>
+                </div>
               )}
             </div>
 
