@@ -5,7 +5,8 @@ import {
   getMealPlanDays, 
   batchApplyTemplateToDays,
   applyTemplateToDay,
-  softDeleteMealPlan
+  softDeleteMealPlan,
+  getProducts
 } from '../firebase/db';
 import { 
   Calendar as CalendarIcon, 
@@ -24,8 +25,9 @@ import {
   BookOpen,
   ArrowRight
 } from 'lucide-react';
-import { MealPlan, MealPlanDay, DayType } from '../types';
+import { MealPlan, MealPlanDay, DayType, Product } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { MealPlanSummary } from '../components/MealPlanSummary';
 
 export const PlanEditor: React.FC = () => {
   const { planCode } = useParams<{ planCode: string }>();
@@ -33,6 +35,7 @@ export const PlanEditor: React.FC = () => {
   const [plan, setPlan] = useState<MealPlan | null>(null);
   const [days, setDays] = useState<MealPlanDay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
   
   // Selection state for batch editing
   const [selectedDayIndices, setSelectedDayIndices] = useState<number[]>([]);
@@ -41,7 +44,7 @@ export const PlanEditor: React.FC = () => {
   const [isCopied, setIsCopied] = useState(false);
 
   // Active view tab: Calendar view vs list view (great for mobile!)
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list' | 'summary'>('calendar');
 
   const navigate = useNavigate();
 
@@ -59,6 +62,9 @@ export const PlanEditor: React.FC = () => {
       
       const daysData = await getMealPlanDays(planCode.toUpperCase());
       setDays(daysData);
+
+      const productsList = await getProducts();
+      setProducts(productsList);
     } catch (err) {
       console.error('Error fetching plan days:', err);
     } finally {
@@ -382,6 +388,14 @@ export const PlanEditor: React.FC = () => {
           >
             清單詳細版
           </button>
+          <button
+            onClick={() => setViewMode('summary')}
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+              viewMode === 'summary' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            材料需求統計
+          </button>
         </div>
       </div>
 
@@ -448,7 +462,7 @@ export const PlanEditor: React.FC = () => {
             );
           })}
         </div>
-      ) : (
+      ) : viewMode === 'list' ? (
         // List Detailed View (Card-style list for mobile friendliness)
         <div className="space-y-4">
           {days.map((day) => (
@@ -476,15 +490,17 @@ export const PlanEditor: React.FC = () => {
               <div className="flex-1">
                 {day.meals && day.meals.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {day.meals.map((meal, mIdx) => (
-                      <div 
-                        key={mIdx}
-                        className="bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600"
-                      >
-                        <span className="font-mono font-bold text-slate-400 mr-1">{meal.time}</span>
-                        {meal.title} ({meal.items?.length || 0}品項)
-                      </div>
-                    ))}
+                    {[...day.meals]
+                      .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'))
+                      .map((meal, mIdx) => (
+                        <div 
+                          key={mIdx}
+                          className="bg-slate-50 border border-slate-200/50 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600"
+                        >
+                          <span className="font-mono font-bold text-slate-400 mr-1">{meal.time}</span>
+                          {meal.title} ({meal.items?.length || 0}品項)
+                        </div>
+                      ))}
                   </div>
                 ) : (
                   <span className="text-xs text-slate-400 italic">今日尚未安排任何餐次。</span>
@@ -503,6 +519,9 @@ export const PlanEditor: React.FC = () => {
             </div>
           ))}
         </div>
+      ) : (
+        // Material Summary View
+        <MealPlanSummary days={days} products={products} />
       )}
       </div>
 

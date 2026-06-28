@@ -22,7 +22,9 @@ import {
   RefreshCw, 
   PlusCircle, 
   X,
-  PlusSquare
+  PlusSquare,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { MealPlan, MealPlanDay, MealPlanMeal, MealPlanMealItem, Product } from '../types';
 
@@ -40,6 +42,7 @@ export const DayDetail: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeMealIndex, setActiveMealIndex] = useState<number | null>(null);
   const [showProductSelector, setShowProductSelector] = useState(false);
+  const [deletingMealIndex, setDeletingMealIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -83,18 +86,18 @@ export const DayDetail: React.FC = () => {
     setDayPlan({ ...dayPlan, meals: updatedMeals });
   };
 
-  // Add a new empty meal
+  // Add a new empty meal (placed at the top so it's immediately visible!)
   const handleAddMeal = () => {
     if (!dayPlan) return;
     const newMeal: MealPlanMeal = {
-      time: '12:00',
+      time: '08:00',
       title: '新餐次',
       note: '',
       items: []
     };
     setDayPlan({
       ...dayPlan,
-      meals: [...dayPlan.meals, newMeal]
+      meals: [newMeal, ...dayPlan.meals]
     });
   };
 
@@ -170,6 +173,26 @@ export const DayDetail: React.FC = () => {
     setDayPlan({ ...dayPlan, meals: updatedMeals });
   };
 
+  // Move item up or down within a meal
+  const handleMoveItem = (mealIndex: number, itemIndex: number, direction: 'up' | 'down') => {
+    if (!dayPlan) return;
+    const updatedMeals = [...dayPlan.meals];
+    const items = [...updatedMeals[mealIndex].items];
+
+    if (direction === 'up' && itemIndex > 0) {
+      const temp = items[itemIndex];
+      items[itemIndex] = items[itemIndex - 1];
+      items[itemIndex - 1] = temp;
+    } else if (direction === 'down' && itemIndex < items.length - 1) {
+      const temp = items[itemIndex];
+      items[itemIndex] = items[itemIndex + 1];
+      items[itemIndex + 1] = temp;
+    }
+
+    updatedMeals[mealIndex].items = items;
+    setDayPlan({ ...dayPlan, meals: updatedMeals });
+  };
+
   // Save changes to database
   const handleSaveChanges = async () => {
     if (!dayPlan || !planCode || !dayIndex) return;
@@ -186,10 +209,18 @@ export const DayDetail: React.FC = () => {
     try {
       const pCode = planCode.toUpperCase();
       const dIdx = parseInt(dayIndex, 10);
-      await updateMealPlanDay(pCode, dIdx, {
-        meals: dayPlan.meals
+
+      // Auto-sort meals by time chronological order
+      const sortedMeals = [...dayPlan.meals].sort((a, b) => {
+        const timeA = a.time || '99:99';
+        const timeB = b.time || '99:99';
+        return timeA.localeCompare(timeB);
       });
-      alert('單日餐次存檔成功！');
+
+      await updateMealPlanDay(pCode, dIdx, {
+        meals: sortedMeals
+      });
+      alert('單日餐次存檔成功！已為您自動依據時間順序進行餐次排序。');
       navigate(`/plan/${pCode}`);
     } catch (err) {
       console.error(err);
@@ -313,16 +344,15 @@ export const DayDetail: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-3">
                     
                     {/* Time Input */}
-                    <div className="w-full sm:w-[120px] shrink-0">
+                    <div className="w-full sm:w-[130px] shrink-0">
                       <label className="text-[10px] font-bold text-slate-400 block mb-1">用餐時間</label>
                       <input
-                        type="text"
+                        type="time"
                         value={meal.time}
-                        placeholder="例如 08:30"
                         readOnly={!isStaff}
                         onChange={(e) => handleMealFieldChange(mIdx, 'time', e.target.value)}
                         className={`w-full h-10 px-3 border rounded-lg text-sm text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-teal-400 ${
-                          !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200'
+                          !isStaff ? 'bg-slate-100/60 text-slate-600 border-slate-150 shadow-none pointer-events-none' : 'bg-slate-50 border-slate-200 cursor-pointer'
                         }`}
                       />
                     </div>
@@ -346,8 +376,9 @@ export const DayDetail: React.FC = () => {
                     {isStaff && (
                       <div className="sm:self-end">
                         <button
+                          type="button"
                           onClick={() => handleDeleteMeal(mIdx)}
-                          className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors"
+                          className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 border border-transparent hover:border-red-100 flex items-center justify-center transition-colors cursor-pointer"
                           title="刪除此餐次"
                         >
                           <Trash2 className="w-4.5 h-4.5" />
@@ -411,11 +442,11 @@ export const DayDetail: React.FC = () => {
                               <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                 <input
                                   type="number"
-                                  min="0.1"
-                                  step="0.1"
+                                  min="1"
+                                  step="1"
                                   value={item.quantity}
                                   readOnly={!isStaff}
-                                  onChange={(e) => handleItemQtyChange(mIdx, iIdx, parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => handleItemQtyChange(mIdx, iIdx, Math.max(1, parseInt(e.target.value, 10) || 1))}
                                   className={`w-12 h-7 border-0 text-center text-xs font-extrabold text-slate-800 focus:outline-none focus:ring-0 p-0 ${
                                     !isStaff ? 'bg-transparent text-slate-600 pointer-events-none' : ''
                                   }`}
@@ -434,6 +465,28 @@ export const DayDetail: React.FC = () => {
                                   !isStaff ? 'bg-transparent border-transparent shadow-none text-slate-400 cursor-default p-0' : 'bg-white'
                                 }`}
                               />
+
+                              {/* Move Item up/down */}
+                              {isStaff && meal.items.length > 1 && (
+                                <div className="flex gap-1 shrink-0">
+                                  <button
+                                    onClick={() => handleMoveItem(mIdx, iIdx, 'up')}
+                                    disabled={iIdx === 0}
+                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                    title="向上移動"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleMoveItem(mIdx, iIdx, 'down')}
+                                    disabled={iIdx === meal.items.length - 1}
+                                    className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                    title="向下移動"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
 
                               {/* Remove Item */}
                               {isStaff && (

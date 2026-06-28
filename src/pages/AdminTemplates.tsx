@@ -16,7 +16,9 @@ import {
   PlusSquare, 
   Search, 
   X,
-  PlusCircle
+  PlusCircle,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 
 export const AdminTemplates: React.FC = () => {
@@ -35,6 +37,7 @@ export const AdminTemplates: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeMealIndex, setActiveMealIndex] = useState<number | null>(null);
   const [showProductSelector, setShowProductSelector] = useState(false);
+  const [deletingMealIndex, setDeletingMealIndex] = useState<number | null>(null);
 
   const fetchTemplatesAndProducts = async () => {
     setLoading(true);
@@ -87,18 +90,18 @@ export const AdminTemplates: React.FC = () => {
     setActiveTemplate({ ...activeTemplate, meals: updatedMeals });
   };
 
-  // Add meal to template
+  // Add meal to template (placed at the top so it's immediately visible!)
   const handleAddMeal = () => {
     if (!activeTemplate) return;
     const newMeal: MealPlanMeal = {
-      time: '12:00',
-      title: '餐次名稱',
+      time: '08:00',
+      title: '新餐次',
       note: '',
       items: []
     };
     setActiveTemplate({
       ...activeTemplate,
-      meals: [...activeTemplate.meals, newMeal]
+      meals: [newMeal, ...activeTemplate.meals]
     });
   };
 
@@ -169,6 +172,25 @@ export const AdminTemplates: React.FC = () => {
     setActiveTemplate({ ...activeTemplate, meals: updatedMeals });
   };
 
+  const handleMoveItem = (mealIndex: number, itemIndex: number, direction: 'up' | 'down') => {
+    if (!activeTemplate) return;
+    const updatedMeals = [...activeTemplate.meals];
+    const items = [...updatedMeals[mealIndex].items];
+
+    if (direction === 'up' && itemIndex > 0) {
+      const temp = items[itemIndex];
+      items[itemIndex] = items[itemIndex - 1];
+      items[itemIndex - 1] = temp;
+    } else if (direction === 'down' && itemIndex < items.length - 1) {
+      const temp = items[itemIndex];
+      items[itemIndex] = items[itemIndex + 1];
+      items[itemIndex + 1] = temp;
+    }
+
+    updatedMeals[mealIndex].items = items;
+    setActiveTemplate({ ...activeTemplate, meals: updatedMeals });
+  };
+
   const handleSaveTemplate = async () => {
     if (!activeTemplate) return;
 
@@ -187,12 +209,19 @@ export const AdminTemplates: React.FC = () => {
 
     setSaving(true);
     try {
+      // Auto-sort meals by time chronological order before saving
+      const sortedMeals = [...activeTemplate.meals].sort((a, b) => {
+        const timeA = a.time || '99:99';
+        const timeB = b.time || '99:99';
+        return timeA.localeCompare(timeB);
+      });
+
       await saveTemplate(activeType, {
         name: activeTemplate.name,
         description: activeTemplate.description,
-        meals: activeTemplate.meals
+        meals: sortedMeals
       });
-      alert(`「${activeTemplate.name}」標準日型母版儲存成功！未來建立的新菜單都將採用此最新排程。`);
+      alert(`「${activeTemplate.name}」標準日型母版儲存成功！已自動為您依時間順序進行餐次排序。未來建立的新菜單都將採用此最新排程。`);
       await fetchTemplatesAndProducts();
     } catch (err) {
       console.error(err);
@@ -301,15 +330,14 @@ export const AdminTemplates: React.FC = () => {
                     
                     {/* Meal Header */}
                     <div className="flex flex-col sm:flex-row gap-3">
-                      <div className="w-full sm:w-[120px] shrink-0">
+                      <div className="w-full sm:w-[130px] shrink-0">
                         <label className="text-[10px] font-bold text-slate-400 block mb-1">預計用餐時間</label>
                         <input
-                          type="text"
+                          type="time"
                           value={meal.time}
-                          placeholder="例如 08:00"
                           disabled={!isStaff}
                           onChange={(e) => handleMealFieldChange(mIdx, 'time', e.target.value)}
-                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700"
+                          className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 cursor-pointer"
                         />
                       </div>
 
@@ -325,11 +353,14 @@ export const AdminTemplates: React.FC = () => {
                         />
                       </div>
 
+                      {/* Delete Meal */}
                       {isStaff && (
                         <div className="sm:self-end">
                           <button
+                            type="button"
                             onClick={() => handleDeleteMeal(mIdx)}
-                            className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors"
+                            className="h-10 w-10 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 flex items-center justify-center transition-colors cursor-pointer"
+                            title="刪除此餐次"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -380,11 +411,11 @@ export const AdminTemplates: React.FC = () => {
                                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5 shadow-sm">
                                   <input
                                     type="number"
-                                    min="0.1"
-                                    step="0.1"
+                                    min="1"
+                                    step="1"
                                     disabled={!isStaff}
                                     value={item.quantity}
-                                    onChange={(e) => handleItemQtyChange(mIdx, iIdx, parseFloat(e.target.value) || 0)}
+                                    onChange={(e) => handleItemQtyChange(mIdx, iIdx, Math.max(1, parseInt(e.target.value, 10) || 1))}
                                     className="w-12 h-7 border-0 text-center text-xs font-extrabold text-slate-800 p-0"
                                   />
                                   <span className="text-[10px] font-bold text-slate-400 pr-2 block">{item.unit}</span>
@@ -398,6 +429,28 @@ export const AdminTemplates: React.FC = () => {
                                   onChange={(e) => handleItemNoteChange(mIdx, iIdx, e.target.value)}
                                   className="h-8 px-2.5 bg-white border border-slate-200 rounded-lg text-[10px] text-slate-500 w-28 sm:w-36 focus:outline-none"
                                 />
+
+                                {/* Move Item up/down */}
+                                {isStaff && meal.items.length > 1 && (
+                                  <div className="flex gap-1 shrink-0">
+                                    <button
+                                      onClick={() => handleMoveItem(mIdx, iIdx, 'up')}
+                                      disabled={iIdx === 0}
+                                      className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                      title="向上移動"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleMoveItem(mIdx, iIdx, 'down')}
+                                      disabled={iIdx === meal.items.length - 1}
+                                      className="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center transition-colors"
+                                      title="向下移動"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
 
                                 {isStaff && (
                                   <button

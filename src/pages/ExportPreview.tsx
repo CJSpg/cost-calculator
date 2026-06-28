@@ -288,8 +288,10 @@ export const ExportPreview: React.FC = () => {
                       {/* Day Meals Container */}
                       <div className="flex-1 space-y-3">
                         {day.meals && day.meals.length > 0 ? (
-                          day.meals.map((meal, mIdx) => (
-                            <div key={mIdx} className="space-y-1 bg-white p-1.5 rounded-lg border border-slate-100 shadow-2xs">
+                          [...day.meals]
+                            .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'))
+                            .map((meal, mIdx) => (
+                              <div key={mIdx} className="space-y-1 bg-white p-1.5 rounded-lg border border-slate-100 shadow-2xs">
                               <div className="flex items-center gap-1">
                                 <span className="font-mono font-black text-[9px] text-slate-400">{meal.time}</span>
                                 <span className="text-[10px] font-extrabold text-slate-800 leading-none">{meal.title}</span>
