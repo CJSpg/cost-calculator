@@ -14,31 +14,7 @@ import {
   Award
 } from 'lucide-react';
 import { MealPlan, MealPlanDay } from '../types';
-import html2canvas from 'html2canvas';
-
-// Helper to convert Tailwind v4 oklch() colors to compatible hsl() colors for html2canvas
-const convertOklchToHsl = (cssText: string): string => {
-  return cssText.replace(/oklch\(\s*([^/\s)]+)\s+([^/\s)]+)\s+([^/\s)]+)(?:\s*\/\s*([^)]+))?\s*\)/g, (match, lVal, cVal, hVal, aVal) => {
-    // Parse L (lightness)
-    let l = parseFloat(lVal);
-    if (lVal.indexOf('%') === -1 && l <= 1) {
-      l = l * 100;
-    }
-    // Parse C (chroma)
-    const c = parseFloat(cVal);
-    // Parse H (hue)
-    const h = parseFloat(hVal);
-    
-    // Approximate Saturation (Chroma is typically 0 to 0.4, max is around 0.4, so 0.4 * 250 = 100%)
-    const s = Math.min(100, Math.max(0, c * 250));
-    
-    if (aVal) {
-      return `hsla(${isNaN(h) ? 0 : h}, ${isNaN(s) ? 0 : s}%, ${isNaN(l) ? 0 : l}%, ${aVal})`;
-    } else {
-      return `hsl(${isNaN(h) ? 0 : h}, ${isNaN(s) ? 0 : s}%, ${isNaN(l) ? 0 : l}%)`;
-    }
-  });
-};
+import html2canvas from 'html2canvas-pro';
 
 export const ExportPreview: React.FC = () => {
   const { planCode } = useParams<{ planCode: string }>();
@@ -102,26 +78,7 @@ export const ExportPreview: React.FC = () => {
         scale: 2, // Double DPI for super sharp text
         useCORS: true,
         backgroundColor: '#ffffff',
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Process all style tags in cloned document to replace unsupported oklch() colors with standard hsl() colors
-          const styleTags = clonedDoc.getElementsByTagName('style');
-          for (let i = 0; i < styleTags.length; i++) {
-            const style = styleTags[i];
-            if (style.innerHTML) {
-              style.innerHTML = convertOklchToHsl(style.innerHTML);
-            }
-          }
-          // Process inline styles if any contain oklch
-          const allElements = clonedDoc.getElementsByTagName('*');
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i] as HTMLElement;
-            const styleAttr = el.getAttribute('style');
-            if (styleAttr && styleAttr.includes('oklch')) {
-              el.setAttribute('style', convertOklchToHsl(styleAttr));
-            }
-          }
-        }
+        logging: false
       });
 
       const dataUrl = canvas.toDataURL('image/png');
@@ -269,65 +226,46 @@ export const ExportPreview: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 7 Days Columns in Printable Image */}
-                <div className="grid grid-cols-7 gap-3">
+                {/* 7 Days List in Printable Image */}
+                <div className="space-y-6">
                   {weekDays.map((day) => (
-                    <div 
-                      key={day.dayIndex}
-                      className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between min-h-[350px]"
-                    >
-                      {/* Day Header */}
-                      <div className="border-b border-slate-200/60 pb-2 mb-2 space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="font-mono text-[10px] font-black text-slate-400">DAY {day.dayIndex}</span>
-                          {getDayTypeTag(day.dayType)}
-                        </div>
-                        <div className="text-[10px] font-black text-slate-800">{day.date}</div>
+                    <div key={day.dayIndex} className="space-y-2">
+                      {/* Day Header Row */}
+                      <div className="flex items-center gap-3 border-b border-slate-900 pb-1.5">
+                        <span className="font-display text-base font-extrabold text-slate-950">DAY {day.dayIndex}</span>
+                        <span className="px-2.5 py-0.5 text-xs font-bold rounded bg-teal-50 text-teal-700 border border-teal-100">{day.dayTypeName}</span>
+                        <span className="font-mono text-xs text-slate-400 font-bold ml-auto">{day.date}</span>
                       </div>
 
                       {/* Day Meals Container */}
-                      <div className="flex-1 space-y-3">
+                      <div className="pl-1 space-y-2">
                         {day.meals && day.meals.length > 0 ? (
                           [...day.meals]
                             .sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'))
-                            .map((meal, mIdx) => (
-                              <div key={mIdx} className="space-y-1 bg-white p-1.5 rounded-lg border border-slate-100 shadow-2xs">
-                              <div className="flex items-center gap-1">
-                                <span className="font-mono font-black text-[9px] text-slate-400">{meal.time}</span>
-                                <span className="text-[10px] font-extrabold text-slate-800 leading-none">{meal.title}</span>
-                              </div>
-
-                              {/* Items list inside meal */}
-                              {meal.items && meal.items.length > 0 && (
-                                <ul className="text-[8px] text-slate-500 space-y-0.5 border-t border-slate-100 pt-1 mt-1">
-                                  {meal.items.map((item, iIdx) => (
-                                    <li key={iIdx} className="leading-tight flex justify-between gap-1">
-                                      <span className="font-bold text-slate-700 truncate max-w-[65px]">{item.productName}</span>
-                                      <span className="font-bold text-slate-900 shrink-0">{item.quantity}{item.unit}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                              
-                              {meal.note && (
-                                <p className="text-[7px] text-amber-600 bg-amber-50/50 p-0.5 rounded leading-tight italic mt-1">
-                                  *{meal.note}
-                                </p>
-                              )}
-                            </div>
-                          ))
+                            .map((meal, mIdx) => {
+                              const itemsText = meal.items && meal.items.length > 0
+                                ? meal.items.map(item => `${item.productName} ${item.quantity}${item.unit}`).join(' + ')
+                                : '無品項';
+                              const noteText = meal.note ? ` *${meal.note}` : '';
+                              return (
+                                <div key={mIdx} className="text-sm flex items-start gap-2.5 leading-relaxed">
+                                  <span className="font-mono font-bold text-teal-600 w-12 shrink-0">{meal.time || '--:--'}</span>
+                                  <span className="font-extrabold text-slate-900 shrink-0">{meal.title}：</span>
+                                  <span className="text-slate-700 flex-1">
+                                    {itemsText}
+                                    {noteText && (
+                                      <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] ml-2 italic font-medium shrink-0 inline-block">
+                                        {noteText}
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })
                         ) : (
-                          <div className="text-[10px] text-slate-300 italic text-center py-6">
-                            未排餐次
-                          </div>
+                          <div className="text-xs text-slate-400 italic py-1 pl-1">未排餐次</div>
                         )}
                       </div>
-
-                      {/* Footer Tip */}
-                      <div className="text-[7px] text-slate-400 text-center pt-2 border-t border-slate-150 mt-2">
-                        {day.dayTypeName}
-                      </div>
-
                     </div>
                   ))}
                   
@@ -335,7 +273,7 @@ export const ExportPreview: React.FC = () => {
                   {weekDays.length < 7 && Array.from({ length: 7 - weekDays.length }).map((_, idx) => (
                     <div 
                       key={idx} 
-                      className="border border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/20 flex items-center justify-center text-[10px] text-slate-300 italic"
+                      className="border border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/20 flex items-center justify-center text-xs text-slate-300 italic"
                     >
                       完結
                     </div>
