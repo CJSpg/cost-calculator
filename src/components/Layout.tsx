@@ -26,6 +26,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const isAdminSection = location.pathname.startsWith('/admin');
 
   const handleLogout = async () => {
+    if (!window.confirm('確定要登出嗎？')) {
+      return;
+    }
     try {
       await logout();
       navigate('/');

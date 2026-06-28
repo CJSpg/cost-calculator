@@ -284,83 +284,35 @@ export const PlanEditor: React.FC = () => {
 
       </div>
 
-      {/* 2. Batch Operations Controller (Floating panel design) */}
-      <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl p-4 sm:p-5 border border-amber-200/60 shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-          <div className="space-y-1">
-            <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              批次套用日型模板
-            </h3>
-            <p className="text-xs text-slate-500">
-              您可以勾選月曆卡片上的核取方塊多選天數，或使用快速鍵一次套用特定日型的模板。
-            </p>
-          </div>
+      {/* 2. Batch Operations Controller (Simplified design) */}
+      <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl p-4 border border-amber-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5 shrink-0">
+          <Sparkles className="w-4 h-4 text-amber-600" />
+          批次套用日型模板：
+        </h3>
 
-          {/* Quick Select Buttons */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <button 
-              type="button"
-              onClick={handleSelectAll} 
-              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] transition-all shadow-sm"
-            >
-              {selectedDayIndices.length === days.length ? '取消全選' : '全選 45天'}
-            </button>
-            <button 
-              type="button"
-              onClick={handleSelectPrepDays} 
-              className="px-2.5 py-1 rounded bg-white hover:bg-blue-50 border border-blue-200 text-blue-600 font-bold text-[11px] transition-all shadow-sm"
-            >
-              首3天
-            </button>
-            {[1, 2, 3, 4, 5, 6, 0].map((w) => {
-              const label = w === 0 ? '每周日' : `每周${['', '一', '二', '三', '四', '五', '六'][w]}`;
-              return (
-                <button
-                  key={w}
-                  type="button"
-                  onClick={() => handleSelectWeekday(w)}
-                  className="px-2.5 py-1 rounded bg-white hover:bg-teal-50 border border-teal-200 text-teal-600 font-bold text-[11px] transition-all shadow-sm"
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Action controls */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl border border-amber-200/50">
-          <div className="text-xs font-bold text-slate-600">
-            已選天數：
-            <span className="inline-block px-2.5 py-0.5 rounded bg-teal-100 text-teal-800 font-extrabold text-sm font-mono mx-1">
-              {selectedDayIndices.length}
-            </span>
-            天
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
-            <select
-              value={batchDayType}
-              onChange={(e) => setBatchDayType(e.target.value as DayType)}
-              disabled={applyingBatch || selectedDayIndices.length === 0}
-              className="flex-1 sm:flex-initial h-10 px-3 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="PREPARATION">準備日 模板</option>
-              <option value="PROTEIN">蛋白日 模板</option>
-              <option value="SLIMMING">纖體日 模板</option>
-              <option value="METABOLISM">新陳代謝日 模板</option>
-            </select>
-
-            <button
-              onClick={handleApplyBatch}
-              disabled={applyingBatch || selectedDayIndices.length === 0}
-              className="h-10 px-4 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold text-xs flex items-center gap-1 transition-colors"
-            >
-              {applyingBatch ? '更新中...' : '確認變更'}
-              <Check className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        {/* Quick Select Buttons */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <button 
+            type="button"
+            onClick={handleSelectPrepDays} 
+            className="px-2.5 py-1 rounded bg-white hover:bg-blue-50 border border-blue-200 text-blue-600 font-bold text-[11px] transition-all shadow-sm"
+          >
+            首3天
+          </button>
+          {[1, 2, 3, 4, 5, 6, 0].map((w) => {
+            const label = w === 0 ? '每周日' : `每周${['', '一', '二', '三', '四', '五', '六'][w]}`;
+            return (
+              <button
+                key={w}
+                type="button"
+                onClick={() => handleSelectWeekday(w)}
+                className="px-2.5 py-1 rounded bg-white hover:bg-teal-50 border border-teal-200 text-teal-600 font-bold text-[11px] transition-all shadow-sm"
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
