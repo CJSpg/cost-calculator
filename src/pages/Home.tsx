@@ -3,8 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { getMealPlanByCode } from '../firebase/db';
 import { Search, PlusCircle, Calendar, Trash2, ArrowRight, BookOpen, AlertCircle, Sparkles } from 'lucide-react';
 import { MealPlan } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 export const Home: React.FC = () => {
+  const { isStaff } = useAuth();
   const [planCodeInput, setPlanCodeInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,7 +80,7 @@ export const Home: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-10 py-4 sm:py-8 animate-fadeIn">
-      
+
       {/* 1. Warm Bright Banner */}
       <div className="bg-gradient-to-br from-teal-400 to-teal-500 rounded-3xl p-6 sm:p-10 text-white shadow-xl shadow-teal-100 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="space-y-4 text-center md:text-left max-w-lg">
@@ -93,20 +95,22 @@ export const Home: React.FC = () => {
             為您客製化 45 天健康飲食排程。包含準備日、蛋白日、纖體日、新陳代謝日等四種循環日型，點選每天即刻套用並靈活調整細節餐點。
           </p>
         </div>
-        
+
         {/* Large Friendly Floating Button */}
-        <Link
-          to="/create-plan"
-          className="w-full md:w-auto flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4.5 bg-white text-teal-600 hover:bg-slate-50 font-extrabold text-base rounded-2xl shadow-lg transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
-        >
-          <PlusCircle className="w-6 h-6" />
-          立即建立 45 天菜單
-        </Link>
+        {isStaff && (
+          <Link
+            to="/create-plan"
+            className="w-full md:w-auto flex-shrink-0 inline-flex items-center justify-center gap-2 px-8 py-4.5 bg-white text-teal-600 hover:bg-slate-50 font-extrabold text-base rounded-2xl shadow-lg transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <PlusCircle className="w-6 h-6" />
+            立即建立 45 天菜單
+          </Link>
+        )}
       </div>
 
       {/* 2. Grid for Search & Cache */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        
+
         {/* Plan Code Search (7 Cols) */}
         <div className="md:col-span-7 bg-white rounded-2xl p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
           <div className="space-y-1.5">
@@ -148,17 +152,6 @@ export const Home: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Secure Tip */}
-          <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 text-[11px] text-amber-700 space-y-1">
-            <div className="font-bold flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5" />
-              安全與存取提醒：
-            </div>
-            <p className="leading-relaxed">
-              系統前台採用「代碼驗證」免登入模式。任何人只要持有正確的菜單代碼即可進行讀取與編輯。請妥善保存您的代碼，避免將代碼洩露給無關的第三方。
-            </p>
-          </div>
         </div>
 
         {/* Recently Accessed (5 Cols) */}
@@ -168,7 +161,7 @@ export const Home: React.FC = () => {
               <Calendar className="w-5 h-5 text-teal-500" />
               本機快速存取清單
             </h3>
-            
+
             {recentPlans.length === 0 ? (
               <div className="py-8 text-center text-slate-400 space-y-2">
                 <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
@@ -195,7 +188,7 @@ export const Home: React.FC = () => {
                           開始: {plan.startDate}
                         </div>
                       </div>
-                      
+
                       {/* Delete item cache */}
                       <button
                         onClick={(e) => handleRemoveFromRecent(plan.planCode, e)}
@@ -219,7 +212,7 @@ export const Home: React.FC = () => {
       </div>
 
       {/* 3. Guide Section */}
-      <div className="bg-slate-100/60 rounded-2xl p-6 sm:p-8 space-y-6">
+      <div className="bg-slate-100/60 rounded-2xl p-6 sm:p-8 space-y-6" hidden>
         <h3 className="text-base font-bold text-slate-800 text-center sm:text-left">
           如何使用「45 天客製化菜單」？
         </h3>

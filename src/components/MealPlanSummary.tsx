@@ -117,7 +117,7 @@ export const MealPlanSummary: React.FC<MealPlanSummaryProps> = ({ days, products
             className={`h-11 px-5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm ${
               copied
                 ? 'bg-emerald-500 text-white shadow-emerald-50'
-                : 'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-105'
+                : 'bg-blue-500 hover:bg-slate-800 text-white shadow-slate-105'
             }`}
           >
             {copied ? <Check className="w-4 h-4" /> : <Clipboard className="w-4 h-4" />}

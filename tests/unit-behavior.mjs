@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createJiti } from 'jiti';
 
 const jiti = createJiti(import.meta.url);
@@ -7,6 +8,7 @@ const numberInput = await jiti.import('../src/utils/numberInput.ts');
 const mealPlanTemplates = await jiti.import('../src/utils/mealPlanTemplates.ts');
 const navigationLayout = await jiti.import('../src/utils/navigationLayout.ts');
 const tableLayout = await jiti.import('../src/utils/tableLayout.ts');
+const permissions = await jiti.import('../src/utils/permissions.ts');
 
 const {
   parseEditableNumber,
@@ -31,6 +33,12 @@ const {
   adminTableScrollClassName,
   adminTableClassName,
 } = tableLayout;
+
+const {
+  canCreateMealPlan,
+  canUsePlanMutationTools,
+  canAccessAdminRoute,
+} = permissions;
 
 function test(name, fn) {
   try {
@@ -77,6 +85,34 @@ test('admin tables keep rows single-line inside a horizontal scroller', () => {
   assert.match(adminTableScrollClassName, /\boverscroll-x-contain\b/);
   assert.match(adminTableClassName, /\bmin-w-max\b/);
   assert.match(adminTableClassName, /\bwhitespace-nowrap\b/);
+});
+
+test('viewer role cannot reach staff-only editing features', () => {
+  const viewer = { role: 'viewer', enabled: true };
+  const staff = { role: 'staff', enabled: true };
+  const admin = { role: 'admin', enabled: true };
+
+  assert.equal(canCreateMealPlan(viewer), false);
+  assert.equal(canUsePlanMutationTools(viewer), false);
+  assert.equal(canAccessAdminRoute('/admin/templates', viewer), false);
+  assert.equal(canAccessAdminRoute('/admin/plans', viewer), false);
+  assert.equal(canAccessAdminRoute('/admin', viewer), true);
+
+  assert.equal(canCreateMealPlan(staff), true);
+  assert.equal(canUsePlanMutationTools(staff), true);
+  assert.equal(canAccessAdminRoute('/admin/templates', staff), true);
+
+  assert.equal(canCreateMealPlan(admin), true);
+  assert.equal(canAccessAdminRoute('/admin/users', admin), true);
+});
+
+test('firestore rules require staff rights for meal plan mutations', () => {
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+
+  assert.match(rules, /match \/mealPlans\/\{planCode\}\s*\{[\s\S]*allow create: if isStaff\(\);/);
+  assert.match(rules, /match \/mealPlans\/\{planCode\}\s*\{[\s\S]*allow update: if isStaff\(\);/);
+  assert.match(rules, /match \/mealPlans\/\{planCode\}\/days\/\{dayId\}\s*\{[\s\S]*allow create: if isStaff\(\);[\s\S]*allow update: if isStaff\(\);/);
+  assert.match(rules, /match \/mealPlans\/\{planCode\}\/templates\/\{templateId\}\s*\{[\s\S]*allow create: if isStaff\(\);[\s\S]*allow update, delete: if isStaff\(\);/);
 });
 
 test('templateToMealPlanMeals deep-clones meals and items', () => {

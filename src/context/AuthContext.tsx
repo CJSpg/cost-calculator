@@ -8,6 +8,7 @@ import {
 import { auth } from '../firebase/config';
 import { getUserProfile, saveUserProfile } from '../firebase/db';
 import { UserProfile, UserRole } from '../types';
+import { isEnabledAdmin, isEnabledStaff, isEnabledRole } from '../utils/permissions';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -116,9 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = userProfile?.role === 'admin' && userProfile?.enabled === true;
-  const isStaff = (userProfile?.role === 'staff' || userProfile?.role === 'admin') && userProfile?.enabled === true;
-  const isViewer = userProfile?.enabled === true;
+  const isAdmin = isEnabledAdmin(userProfile);
+  const isStaff = isEnabledStaff(userProfile);
+  const isViewer = isEnabledRole(userProfile, 'viewer');
 
   return (
     <AuthContext.Provider value={{

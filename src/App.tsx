@@ -19,8 +19,13 @@ import { AdminPlans } from './pages/AdminPlans';
 import { AdminUsers } from './pages/AdminUsers';
 
 // Protected Route Guard
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, loading, userProfile } = useAuth();
+const ProtectedRoute: React.FC<{
+  children: React.ReactNode;
+  requireStaff?: boolean;
+  requireAdmin?: boolean;
+  fallbackPath?: string;
+}> = ({ children, requireStaff = false, requireAdmin = false, fallbackPath = '/admin' }) => {
+  const { currentUser, loading, userProfile, isStaff, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -38,6 +43,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   // If logged in but account is disabled
   if (userProfile && !userProfile.enabled) {
     return <Navigate to="/admin" replace />;
+  }
+
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to={fallbackPath} replace />;
+  }
+
+  if (requireStaff && !isStaff) {
+    return <Navigate to={fallbackPath} replace />;
   }
 
   return <>{children}</>;
@@ -62,12 +75,19 @@ const App: React.FC = () => {
             <Routes>
               {/* 1. Public Front-end Routes */}
               <Route path="/" element={<Home />} />
-              <Route path="/create-plan" element={<CreatePlan />} />
+              <Route
+                path="/create-plan"
+                element={
+                  <ProtectedRoute requireStaff fallbackPath="/">
+                    <CreatePlan />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/plan/:planCode" element={<PlanEditor />} />
               <Route
                 path="/plan/:planCode/templates"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireStaff fallbackPath="/">
                     <PlanTemplates />
                   </ProtectedRoute>
                 }
@@ -90,7 +110,7 @@ const App: React.FC = () => {
               <Route 
                 path="/admin/products" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireStaff>
                     <AdminProducts />
                   </ProtectedRoute>
                 } 
@@ -98,7 +118,7 @@ const App: React.FC = () => {
               <Route 
                 path="/admin/templates" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireStaff>
                     <AdminTemplates />
                   </ProtectedRoute>
                 } 
@@ -106,7 +126,7 @@ const App: React.FC = () => {
               <Route 
                 path="/admin/plans" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireStaff>
                     <AdminPlans />
                   </ProtectedRoute>
                 } 
@@ -114,7 +134,7 @@ const App: React.FC = () => {
               <Route 
                 path="/admin/users" 
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin>
                     <AdminUsers />
                   </ProtectedRoute>
                 } 

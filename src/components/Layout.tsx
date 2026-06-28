@@ -6,6 +6,7 @@ import {
   mobileDrawerClassName,
   mobileHeaderSpacerClassName,
 } from '../utils/navigationLayout';
+import { canAccessAdminRoute } from '../utils/permissions';
 import { 
   Menu, 
   X, 
@@ -23,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { userProfile, logout, isStaff, isAdmin } = useAuth();
+  const { userProfile, logout, isStaff } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +46,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   // Define navigation items
   const frontNavItems = [
     { name: '首頁', path: '/', icon: Home },
-    { name: '新建菜單', path: '/create-plan', icon: PlusCircle },
+    ...(isStaff ? [{ name: '新建菜單', path: '/create-plan', icon: PlusCircle }] : []),
   ];
 
   const adminNavItems = [
@@ -53,8 +54,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     { name: '品項管理', path: '/admin/products', icon: Package },
     { name: '日型模板', path: '/admin/templates', icon: BookOpen },
     { name: '菜單管理', path: '/admin/plans', icon: FileText },
-    ...(isAdmin ? [{ name: '帳號權限', path: '/admin/users', icon: UserCheck }] : []),
-  ];
+    { name: '帳號權限', path: '/admin/users', icon: UserCheck },
+  ].filter(item => canAccessAdminRoute(item.path, userProfile));
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">

@@ -86,6 +86,7 @@ export const PlanEditor: React.FC = () => {
   // Toggle selection for a single day index
   const handleToggleDaySelection = (dayIndex: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isStaff) return;
     if (selectedDayIndices.includes(dayIndex)) {
       setSelectedDayIndices(selectedDayIndices.filter(idx => idx !== dayIndex));
     } else {
@@ -94,6 +95,7 @@ export const PlanEditor: React.FC = () => {
   };
 
   const handleSelectAll = () => {
+    if (!isStaff) return;
     if (selectedDayIndices.length === days.length) {
       setSelectedDayIndices([]);
     } else {
@@ -102,6 +104,7 @@ export const PlanEditor: React.FC = () => {
   };
 
   const handleSelectPrepDays = () => {
+    if (!isStaff) return;
     setSelectedDayIndices(days.filter(d => d.dayIndex <= 3).map(d => d.dayIndex));
   };
 
@@ -115,6 +118,7 @@ export const PlanEditor: React.FC = () => {
   };
 
   const handleSelectWeekday = (targetWeekday: number) => {
+    if (!isStaff) return;
     setSelectedDayIndices(
       days.filter(d => {
         const wk = getDayOfWeek(d.date);
@@ -124,6 +128,11 @@ export const PlanEditor: React.FC = () => {
   };
 
   const handleApplyBatch = async () => {
+    if (!isStaff) {
+      alert('檢視者沒有批次套用日型模板的權限。');
+      return;
+    }
+
     if (selectedDayIndices.length === 0) {
       alert('請先選擇要套用的天數（可勾選月曆卡片右上角核取方塊）！');
       return;
@@ -153,6 +162,7 @@ export const PlanEditor: React.FC = () => {
   };
 
   const handleQuickChangeDayType = async (dayIndex: number, newType: DayType) => {
+    if (!isStaff) return;
     try {
       await applyTemplateToDay(planCode!.toUpperCase(), dayIndex, newType);
       await fetchPlanData();
@@ -295,6 +305,7 @@ export const PlanEditor: React.FC = () => {
       </div>
 
       {/* 2. Batch Operations Controller (Simplified design) */}
+      {isStaff && (
       <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-2xl p-4 border border-amber-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5 shrink-0">
           <Sparkles className="w-4 h-4 text-amber-600" />
@@ -325,6 +336,7 @@ export const PlanEditor: React.FC = () => {
           })}
         </div>
       </div>
+      )}
 
       {/* 3. View Mode Tabs */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-200 pb-2">
@@ -386,19 +398,21 @@ export const PlanEditor: React.FC = () => {
                   </div>
 
                   {/* Checkbox for batch select */}
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onClick={(e) => e.stopPropagation()} // Prevent card navigation trigger
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedDayIndices([...selectedDayIndices, day.dayIndex]);
-                      } else {
-                        setSelectedDayIndices(selectedDayIndices.filter(idx => idx !== day.dayIndex));
-                      }
-                    }}
-                    className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-teal-500 focus:ring-teal-400 cursor-pointer"
-                  />
+                  {isStaff && (
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onClick={(e) => e.stopPropagation()} // Prevent card navigation trigger
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedDayIndices([...selectedDayIndices, day.dayIndex]);
+                        } else {
+                          setSelectedDayIndices(selectedDayIndices.filter(idx => idx !== day.dayIndex));
+                        }
+                      }}
+                      className="w-4 h-4 sm:w-5 sm:h-5 rounded border-slate-300 text-teal-500 focus:ring-teal-400 cursor-pointer"
+                    />
+                  )}
                 </div>
 
                 {/* Body (Day Type Tag and Meals brief) */}
@@ -488,7 +502,7 @@ export const PlanEditor: React.FC = () => {
       </div>
 
       {/* 5. Floating Bottom Batch Action Bar */}
-      {selectedDayIndices.length > 0 && (
+      {isStaff && selectedDayIndices.length > 0 && (
         <div className="sticky bottom-4 sm:bottom-6 mx-auto w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-2xl border-2 border-amber-300 shadow-[0_20px_50px_rgba(245,158,11,0.18)] z-50 p-3 sm:p-4.5 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 animate-slide-up transition-all duration-300">
           <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <div className="flex items-center gap-2.5">

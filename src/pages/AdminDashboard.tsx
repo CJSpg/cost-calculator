@@ -197,6 +197,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* 3. Operational Quick Navigation */}
+      {isStaff && (
       <div className="space-y-4">
         <h3 className="text-sm font-bold text-slate-700">快速功能導航</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -246,6 +247,7 @@ export const AdminDashboard: React.FC = () => {
           </Link>
         </div>
       </div>
+      )}
 
       {/* 4. Recent Active Plans lists */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
@@ -255,13 +257,15 @@ export const AdminDashboard: React.FC = () => {
             最近開立菜單
           </h3>
 
-          <Link
-            to="/admin/plans"
-            className="text-xs font-bold text-teal-500 hover:text-teal-600 flex items-center gap-0.5"
-          >
-            查看全部
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          {isStaff && (
+            <Link
+              to="/admin/plans"
+              className="text-xs font-bold text-teal-500 hover:text-teal-600 flex items-center gap-0.5"
+            >
+              查看全部
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
 
         {plans.length === 0 ? (

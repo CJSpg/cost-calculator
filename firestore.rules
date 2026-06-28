@@ -60,23 +60,23 @@ service cloud.firestore {
     // 4. Meal Plans
     match /mealPlans/{planCode} {
       allow read: if true;
-      allow create: if true;
-      allow update: if isStaff() || (incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt']));
+      allow create: if isStaff();
+      allow update: if isStaff();
       allow delete: if isStaff();
     }
 
     // 5. Meal Plan Days Subcollection
     match /mealPlans/{planCode}/days/{dayId} {
       allow read: if true;
-      allow create: if true;
-      allow update: if exists(/databases/$(database)/documents/mealPlans/$(planCode));
+      allow create: if isStaff();
+      allow update: if isStaff();
       allow delete: if isStaff();
     }
 
     // 6. Meal Plan Scoped Templates Subcollection
     match /mealPlans/{planCode}/templates/{templateId} {
       allow read: if true;
-      allow create: if true;
+      allow create: if isStaff();
       allow update, delete: if isStaff();
     }
   }
